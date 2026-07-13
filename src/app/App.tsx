@@ -33,6 +33,7 @@ import {
   SiTailwindcss,
   SiSupabase,
   SiOwasp,
+  SiPhp,
 } from "react-icons/si";
 import type { IconType } from "react-icons";
 import type { Project } from "@/lib/types";
@@ -58,6 +59,7 @@ const TECH_STACK: { label: string; icon: IconType; color: string }[] = [
   { label: "Tailwind CSS", icon: SiTailwindcss, color: "#38bdf8" },
   { label: "Supabase", icon: SiSupabase, color: "#3ecf8e" },
   { label: "OWASP", icon: SiOwasp, color: "#00549e" },
+  { label: "PHP", icon: SiPhp, color: "#777bb4" },
 ];
 
 // ─── Projects data hook (Firestore-backed) ───────────────────────────────────
@@ -741,7 +743,7 @@ function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void;
           >
             <ImageWithFallback
               src={paulPhoto}
-              alt="Paul Adamu — Cybersecurity Specialist & Frontend Developer"
+              alt="Paul Adamu — Full-Stack Developer & Cybersecurity Specialist"
               className="w-full h-full object-cover object-top"
               style={{ transform: "rotate(90deg) scale(1.4)", transformOrigin: "center center" }}
             />
