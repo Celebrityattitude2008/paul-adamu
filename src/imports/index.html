@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Paul Adamu - Web Developer</title>
+        <meta name="description" content="Portfolio of Paul Adamu, Web Developer. Explore secure architectures, modern interfaces, and innovative web solutions.">
+        <meta name="keywords" content="Paul Adamu, Web Developer, Web Development, Portfolio, Secure Architectures, UI, UX, Nigeria">
+        <meta name="author" content="Paul Adamu">
+        <meta name="robots" content="index, follow">
+        <link rel="canonical" href="https://pauladamu.netlify.app/">
+
+        <meta property="og:title" content="Paul Adamu - Web Developer">
+        <meta property="og:description" content="Portfolio of Paul Adamu, Web Developer. Explore secure architectures, modern interfaces, and innovative web solutions.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://pauladamu.netlify.app/">
+        <meta property="og:image" content="https://your-portfolio-url.com/paul.png">
+
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Paul Adamu - Web Developer">
+        <meta name="twitter:description" content="Portfolio of Paul Adamu, Web Developer. Explore secure architectures, modern interfaces, and innovative web solutions.">
+        <meta name="twitter:image" content="https://pauladamu.netlify.app/paul.png">
+
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "Person",
+            "name": "Paul Adamu",
+            "url": "pauladamu.netlify.app/",
+            "image": "https://your-portfolio-url.com/paul.png",
+            "sameAs": [
+                "https://github.com/Celebrityattitude2008",
+                "https://linkedin.com/in/paul-adamu-67bb46324"
+            ],
+            "jobTitle": "Web Developer",
+            "description": "Portfolio of Paul Adamu, Web Developer. Explore secure architectures, modern interfaces, and innovative web solutions."
+        }
+        </script>
+
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+        <style>
+        :root {
+            --color-primary-black: #0D0D0D; 
+            --color-secondary-black: #1A1A1A; 
+            --color-primary-white: #FFFFFF; 
+            --color-accent-yellow: #FFD700; 
+            --color-dark-yellow: #e6c200; 
+            --transition-speed: 0.4s; 
+            --glow: 0 0 15px rgba(255, 215, 0, 0.4);
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes imageGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
+            50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.5); }
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--color-primary-black);
+            color: var(--color-primary-white);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .section-padding { padding: 6rem 1.5rem; }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 5%;
+            position: sticky;
+            top: 0;
+            background: rgba(13, 13, 13, 0.85);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+        }
+
+        .logo { 
+            font-size: 1.8rem; 
+            font-weight: 800; 
+            color: var(--color-accent-yellow); 
+            text-decoration: none; 
+            letter-spacing: -1px;
+            transition: var(--transition-speed);
+        }
+        .logo:hover { text-shadow: var(--glow); transform: scale(1.05); }
+
+        .hero-section { 
+            text-align: center; 
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        .profile-image-wrapper {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            border: 4px solid var(--color-accent-yellow);
+            margin: 0 auto 2.5rem;
+            overflow: hidden;
+            animation: imageGlow 4s infinite ease-in-out;
+            transition: var(--transition-speed);
+            cursor: pointer;
+        }
+
+        .profile-image-wrapper:hover {
+            transform: scale(1.05) rotate(2deg);
+        }
+
+        .profile-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            background-color: rgba(255, 215, 0, 0.1);
+            color: var(--color-accent-yellow);
+            border: 1px solid var(--color-accent-yellow);
+            padding: 0.5rem 1.2rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .hero-title { 
+            font-size: clamp(3rem, 8vw, 5rem); 
+            font-weight: 800; 
+            margin-bottom: 1rem;
+            letter-spacing: -2px;
+        }
+        .hero-title .highlight { color: var(--color-accent-yellow); text-shadow: var(--glow); }
+
+        .button-group {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .cta-button {
+            background-color: var(--color-accent-yellow);
+            color: var(--color-primary-black);
+            border: 2px solid var(--color-accent-yellow);
+            padding: 1.2rem 2.5rem;
+            font-size: 1rem;
+            font-weight: 800;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--transition-speed);
+            text-decoration: none;
+            display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .cta-button.secondary {
+            background-color: transparent;
+            color: var(--color-primary-white);
+            border: 2px solid var(--color-primary-white);
+        }
+
+        .cta-button:hover {
+            background-color: var(--color-primary-white);
+            border-color: var(--color-primary-white);
+            color: var(--color-primary-black);
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .cta-button.secondary:hover {
+            background-color: var(--color-accent-yellow);
+            border-color: var(--color-accent-yellow);
+        }
+
+        /* --- CONTACT FORM --- */
+        #contact { background: linear-gradient(180deg, var(--color-primary-black) 0%, #111 100%); }
+
+        .contact-container {
+            max-width: 650px;
+            margin: 0 auto;
+            padding: 3.5rem;
+            background: rgba(255, 255, 255, 1); 
+            border-radius: 24px;
+            color: #000;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .contact-container h2 { 
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 2rem; 
+            text-align: center; 
+        }
+
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; font-weight: 700; margin-bottom: 0.6rem; font-size: 0.95rem; text-transform: uppercase; color: #444; }
+
+        .contact-container input, .contact-container textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            background: #fdfdfd;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: var(--transition-speed);
+        }
+
+        .contact-container input:focus, .contact-container textarea:focus {
+            outline: none;
+            border-color: var(--color-accent-yellow);
+            background: #fff;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background-color: var(--color-primary-black);
+            color: var(--color-primary-white);
+            padding: 1.2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: var(--transition-speed);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .submit-btn:hover {
+            background-color: var(--color-accent-yellow);
+            color: #000;
+            transform: translateY(-2px);
+        }
+
+        /* --- SOCIAL LINKS ANIMATIONS --- */
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .social-icon {
+            color: var(--color-primary-white);
+            font-size: 2rem;
+            transition: var(--transition-speed);
+            display: inline-block;
+            text-decoration: none;
+            opacity: 0.8;
+        }
+
+        .social-icon:hover {
+            color: var(--color-accent-yellow);
+            transform: translateY(-5px) scale(1.15);
+            text-shadow: var(--glow);
+            opacity: 1;
+        }
+
+        /* Desktop Layout Fixes */
+        @media (min-width: 768px) {
+            .hero-section { text-align: left; display: flex; flex-direction: row-reverse; align-items: center; justify-content: space-between; padding: 10rem 10%; }
+            .profile-image-wrapper { margin: 0; width: 380px; height: 380px; }
+            .hero-content { flex: 1; padding-right: 2rem; }
+            .button-group { justify-content: flex-start; }
+        }
+
+        /* 1. Define the falling code animation */
+        @keyframes matrix-fade {
+            0% { background-position: 0% -100%; }
+            100% { background-position: 0% 100%; }
+        }
+
+        /* 2. Style the specific text you want to trigger the effect */
+        .cyber-trigger {
+            position: relative;
+            cursor: help;
+            transition: var(--transition-speed);
+        }
+
+        .cyber-trigger:hover {
+            color: var(--color-accent-yellow);
+            text-shadow: 0 0 10px var(--color-accent-yellow);
+        }
+
+        /* 3. The "Matrix" hidden layer */
+        .cyber-trigger::after {
+            content: "101101010110"; 
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            font-size: 0.7rem;
+            color: var(--color-accent-yellow);
+            opacity: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            transition: var(--transition-speed);
+            pointer-events: none;
+            font-family: monospace;
+        }
+
+        #timer {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    font-family: 'Inter', sans-serif;
+    margin: 2rem 0;
+}
+
+.timer-unit {
+    background: rgba(255, 215, 0, 0.05);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    padding: 1rem;
+    border-radius: 12px;
+    min-width: 80px;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--color-accent-yellow);
+}
+
+.timer-unit span {
+    display: block;
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 5px;
+    text-shadow: var(--glow);
+}
+
+/* Mobile fix for timer */
+@media (max-width: 480px) {
+    #timer { gap: 0.5rem; }
+    .timer-unit { min-width: 60px; padding: 0.5rem; }
+    .timer-unit span { font-size: 1.5rem; }
+}
+
+        /* 4. Reveal on hover */
+        .cyber-trigger:hover::after {
+            opacity: 0.6;
+            animation: matrix-fade 2s linear infinite;
+            content: "01101110 10101101 01110101"; 
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="#" class="logo">ZTI</a>
+        <nav style="display: flex; gap: 30px;">
+            <a href="#about" style="color: white; text-decoration: none; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">About</a>
+            <a href="#contact" style="color: white; text-decoration: none; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Contact</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero-section section-padding">
+            <div class="profile-image-wrapper">
+                <img src="paul.png" alt="Paul Adamu Profile Picture">
+            </div>
+            <div class="hero-content">
+                <div class="status-badge">● Available for Work</div>
+                <h1 class="hero-title">Hi, I'm <span class="highlight">Paul</span></h1>
+                <p style="font-size: 1.8rem; font-weight: 300; opacity: 0.9; margin-bottom: 2rem;">
+                    <span class="cyber-trigger">Web</span>  
+                    <span style="color: var(--color-accent-yellow)">Developer</span>
+                </p>
+                
+                <div class="button-group">
+                    <a href="work.html" class="cta-button">View Work</a>
+                    <a href="#contact" class="cta-button secondary">Get In Touch</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="section-padding" style="text-align: center; max-width: 900px; margin: 0 auto;">
+            <h2 style="color: var(--color-accent-yellow); font-size: 2.5rem; font-weight: 800; margin-bottom: 1.5rem; text-transform: uppercase;">About Me</h2>
+            <p style="font-size: 1.2rem; color: #ddd; line-height: 1.8;">
+                I specialize in building <b style="color: white">secure, user-friendly websites</b>. As a web developer, I create sites that are fast, accessible, and visually engaging—while making sure your data and users stay protected.
+            </p>
+        </section>
+
+        <section id="contact" class="section-padding">
+            <div class="contact-container">
+                <h2>Send a Message</h2>
+                <form action="https://formspree.io/f/xzdaeakg" method="POST">
+                    <div class="form-group">
+                        <label for="name">Full Name</label>
+                        <input type="text" name="name" id="name" placeholder="Enter your name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" name="email" id="email" placeholder="email@example.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <textarea name="message" id="message" rows="5" placeholder="How can I help you?" required></textarea>
+                    </div>
+
+                    <input type="hidden" name="_subject" value="New Portfolio Inquiry!">
+
+                    <button type="submit" class="submit-btn">Send Message</button>
+                </form>
+            </div>
+        </section>
+
+        <footer style="text-align: center; padding: 4rem 2rem; opacity: 0.9;">
+            <div class="social-links">
+                <a href="https://www.linkedin.com/in/paul-adamu-67bb46324" class="social-icon" target="_blank" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                <a href="https://www.instagram.com/pa_zti" class="social-icon" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.youtube.com/@officialpauladamu" class="social-icon" target="_blank" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+            </div>
+            <div style="font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; opacity: 0.4;">
+                © 2026 Paul Adamu // Web Developer 
+            </div>
+        </footer>
+    </main>
+
+    <script>
+        // 1. Set the date we're counting down to
+        // Format: "Month Day, Year HH:MM:SS"
+        const countDownDate = new Date("March 20, 2026 00:00:00").getTime();
+    
+        // 2. Update the count down every 1 second
+        const x = setInterval(function() {
+    
+            // Get today's date and time
+            const now = new Date().getTime();
+    
+            // Find the distance between now and the count down date
+            const distance = countDownDate - now;
+    
+            // Time calculations for days, hours, minutes and seconds
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+    
+            // 3. Output the result in the element with id="timer"
+            // We use spans for styling the numbers separately from the labels
+            document.getElementById("timer").innerHTML = `
+                <div class="timer-unit"><span>${days}</span>d</div>
+                <div class="timer-unit"><span>${hours}</span>h</div>
+                <div class="timer-unit"><span>${minutes}</span>m</div>
+                <div class="timer-unit"><span>${seconds}</span>s</div>
+            `;
+    
+            // 4. If the count down is over, write some text 
+            if (distance < 0) {
+                clearInterval(x);
+                document.getElementById("timer").innerHTML = "OFFER EXPIRED";
+            }
+        }, 1000);
+
+    </script>
+</body>
+</html>
