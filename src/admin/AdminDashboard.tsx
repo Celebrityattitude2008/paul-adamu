@@ -1,22 +1,50 @@
 import { useEffect, useState } from "react";
-import { LogOut, Pencil, Plus, Shield, Trash2 } from "lucide-react";
+import { LogOut, Mail, MailOpen, Pencil, Plus, Shield, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { subscribeToProjects, createProject, updateProject, deleteProject } from "@/lib/projects";
-import type { Project, ProjectInput } from "@/lib/types";
+import { subscribeToMessages, markMessageRead, deleteMessage } from "@/lib/messages";
+import type { ContactMessage, Project, ProjectInput } from "@/lib/types";
 import { ProjectForm } from "./ProjectForm";
 
 export function AdminDashboard() {
   const { user, logOut } = useAuth();
+  const [tab, setTab] = useState<"projects" | "messages">("projects");
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [mode, setMode] = useState<"list" | "create" | "edit">("list");
   const [editing, setEditing] = useState<Project | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [messages, setMessages] = useState<ContactMessage[] | null>(null);
+  const [messagesError, setMessagesError] = useState<string | null>(null);
+  const unreadCount = (messages ?? []).filter((m) => !m.read).length;
+
   useEffect(() => {
     const unsub = subscribeToProjects(setProjects, (e) => setError(e.message));
     return unsub;
   }, []);
+
+  useEffect(() => {
+    const unsub = subscribeToMessages(setMessages, (e) => setMessagesError(e.message));
+    return unsub;
+  }, []);
+
+  const handleToggleRead = async (m: ContactMessage) => {
+    try {
+      await markMessageRead(m.id, !m.read);
+    } catch (e) {
+      setMessagesError(e instanceof Error ? e.message : "Failed to update message.");
+    }
+  };
+
+  const handleDeleteMessage = async (m: ContactMessage) => {
+    if (!confirm(`Delete message from "${m.name}"? This can't be undone.`)) return;
+    try {
+      await deleteMessage(m.id);
+    } catch (e) {
+      setMessagesError(e instanceof Error ? e.message : "Failed to delete message.");
+    }
+  };
 
   const handleCreate = async (data: ProjectInput) => {
     setSubmitting(true);
@@ -78,7 +106,7 @@ export function AdminDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {mode === "list" && (
+            {tab === "projects" && mode === "list" && (
               <button
                 onClick={() => setMode("create")}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold"
@@ -97,7 +125,27 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        {error && (
+        {/* Tabs */}
+        <div className="flex items-center gap-2 border-b" style={{ borderColor: "rgba(240,246,252,0.1)" }}>
+          {([
+            { key: "projects", label: "Projects" },
+            { key: "messages", label: `Messages${unreadCount > 0 ? ` (${unreadCount})` : ""}` },
+          ] as const).map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className="px-4 py-2.5 text-sm font-medium -mb-px"
+              style={{
+                color: tab === t.key ? "#00ffcc" : "#8b949e",
+                borderBottom: tab === t.key ? "2px solid #00ffcc" : "2px solid transparent",
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "projects" && error && (
           <p
             className="text-sm rounded-lg px-4 py-3"
             style={{ background: "rgba(248,81,73,0.1)", border: "1px solid rgba(248,81,73,0.3)", color: "#f85149" }}
@@ -106,7 +154,98 @@ export function AdminDashboard() {
           </p>
         )}
 
-        {mode === "create" && (
+        {tab === "messages" && messagesError && (
+          <p
+            className="text-sm rounded-lg px-4 py-3"
+            style={{ background: "rgba(248,81,73,0.1)", border: "1px solid rgba(248,81,73,0.3)", color: "#f85149" }}
+          >
+            {messagesError}
+          </p>
+        )}
+
+        {tab === "messages" && (
+          <>
+            {messages === null && (
+              <p style={{ color: "#8b949e", fontSize: "0.85rem" }}>Loading messages…</p>
+            )}
+
+            {messages !== null && messages.length === 0 && (
+              <div
+                className="text-center py-20 rounded-2xl"
+                style={{ background: "#161b22", border: "1px dashed rgba(0,255,204,0.2)" }}
+              >
+                <p style={{ color: "#8b949e", fontSize: "0.9rem" }}>
+                  No messages yet — submissions from the site's contact form will show up here.
+                </p>
+              </div>
+            )}
+
+            {messages && messages.length > 0 && (
+              <div className="flex flex-col gap-3">
+                {messages.map((m) => (
+                  <div
+                    key={m.id}
+                    className="flex flex-col gap-2 p-4 rounded-xl"
+                    style={{
+                      background: "#161b22",
+                      border: m.read ? "1px solid rgba(0,255,204,0.08)" : "1px solid rgba(0,255,204,0.3)",
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-sm truncate">{m.name}</span>
+                          {!m.read && (
+                            <span
+                              className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+                              style={{ background: "rgba(0,255,204,0.12)", color: "#00ffcc" }}
+                            >
+                              New
+                            </span>
+                          )}
+                        </div>
+                        <a
+                          href={`mailto:${m.email}`}
+                          className="text-xs truncate block"
+                          style={{ color: "#0070f3" }}
+                        >
+                          {m.email}
+                        </a>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => handleToggleRead(m)}
+                          className="p-2 rounded-lg"
+                          style={{ background: "rgba(0,112,243,0.1)", color: "#0070f3" }}
+                          aria-label={m.read ? "Mark unread" : "Mark read"}
+                          title={m.read ? "Mark unread" : "Mark read"}
+                        >
+                          {m.read ? <Mail size={15} /> : <MailOpen size={15} />}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMessage(m)}
+                          className="p-2 rounded-lg"
+                          style={{ background: "rgba(248,81,73,0.1)", color: "#f85149" }}
+                          aria-label="Delete"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap" style={{ color: "#c9d1d9" }}>
+                      {m.message}
+                    </p>
+                    <p style={{ fontSize: "0.7rem", color: "#8b949e" }}>
+                      {new Date(m.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {tab === "projects" && mode === "create" && (
           <ProjectForm
             onSubmit={handleCreate}
             onCancel={() => setMode("list")}
@@ -114,7 +253,7 @@ export function AdminDashboard() {
           />
         )}
 
-        {mode === "edit" && editing && (
+        {tab === "projects" && mode === "edit" && editing && (
           <ProjectForm
             initial={editing}
             onSubmit={handleUpdate}
@@ -126,7 +265,7 @@ export function AdminDashboard() {
           />
         )}
 
-        {mode === "list" && (
+        {tab === "projects" && mode === "list" && (
           <>
             {projects === null && (
               <p style={{ color: "#8b949e", fontSize: "0.85rem" }}>Loading projects…</p>

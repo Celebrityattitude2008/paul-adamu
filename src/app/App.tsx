@@ -38,6 +38,7 @@ import {
 import type { IconType } from "react-icons";
 import type { Project } from "@/lib/types";
 import { subscribeToProjects } from "@/lib/projects";
+import { sendMessage } from "@/lib/messages";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -708,13 +709,24 @@ function ProjectCard({
 function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void; setSelectedProject: (p: Project) => void }) {
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const projects = useProjects();
   const featured = (projects ?? []).filter((p) => p.featured).slice(0, 2);
   const preview = featured.length > 0 ? featured : (projects ?? []).slice(0, 2);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setSending(true);
+    setSendError(null);
+    try {
+      await sendMessage(formData);
+      setSubmitted(true);
+    } catch (err) {
+      setSendError(err instanceof Error ? err.message : "Failed to send message.");
+    } finally {
+      setSending(false);
+    }
   };
 
   const stats = [
@@ -1144,12 +1156,7 @@ function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void;
               </p>
             </div>
           ) : (
-            <form
-              onSubmit={handleSubmit}
-              action="https://formspree.io/f/xzdaeakg"
-              method="POST"
-              className="flex flex-col gap-4"
-            >
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               {[
                 { key: "name", label: "Full Name", type: "text", placeholder: "Your name" },
                 { key: "email", label: "Email Address", type: "email", placeholder: "you@domain.com" },
@@ -1229,15 +1236,25 @@ function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void;
                   }}
                 />
               </div>
-              <input type="hidden" name="_subject" value="New Portfolio Inquiry!" />
+              {sendError && (
+                <p
+                  className="text-sm rounded-lg px-4 py-3"
+                  style={{ background: "rgba(248,81,73,0.1)", border: "1px solid rgba(248,81,73,0.3)", color: "#f85149" }}
+                >
+                  {sendError}
+                </p>
+              )}
               <button
                 type="submit"
+                disabled={sending}
                 className="w-full py-3.5 rounded-lg font-semibold text-sm transition-all duration-300"
                 style={{
                   background: "#00ffcc",
                   color: "#0d1117",
                   fontFamily: "'Inter', sans-serif",
                   letterSpacing: "0.04em",
+                  opacity: sending ? 0.6 : 1,
+                  cursor: sending ? "not-allowed" : "pointer",
                 }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 24px rgba(0,255,204,0.4)";
@@ -1248,7 +1265,7 @@ function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void;
                   (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
                 }}
               >
-                Transmit Message
+                {sending ? "Transmitting…" : "Transmit Message"}
               </button>
             </form>
           )}

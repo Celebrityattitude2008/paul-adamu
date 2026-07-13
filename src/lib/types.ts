@@ -28,3 +28,14 @@ export interface Project {
 }
 
 export type ProjectInput = Omit<Project, "id" | "createdAt">;
+
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  read: boolean;
+  createdAt: number;
+}
+
+export type ContactMessageInput = Pick<ContactMessage, "name" | "email" | "message">;

@@ -21,7 +21,7 @@ No router library is wired up — `src/main.tsx` does a simple path check: `/adm
 ### Still required in the Firebase Console (cannot be done from here)
 1. **Enable Google as a sign-in provider**: Firebase Console → Authentication → Sign-in method → enable Google.
 2. **Add your Replit dev domain and your Vercel domain** to Authentication → Settings → Authorized domains, or Google sign-in popups will be blocked.
-3. **Deploy `firestore.rules`** (in the project root) to the actual `paul-adamu` Firebase project: `firebase deploy --only firestore:rules` (requires `firebase login` first), or paste its contents into Firebase Console → Firestore Database → Rules. Until this is done, the Work section will show "no projects" and admin writes will fail with a permissions error — this is expected and by design (rules default-deny).
+3. **Deploy `firestore.rules`** (in the project root) to the actual `paul-adamu` Firebase project: `firebase deploy --only firestore:rules` (requires `firebase login` first), or paste its contents into Firebase Console → Firestore Database → Rules. Until this is done, the Work section will show "no projects", admin writes will fail with a permissions error, and the contact form ("Encrypted Channel") will fail to send — this is expected and by design (rules default-deny).
 
 ## Deploying to Vercel
 1. Push this repo to GitHub and import it in Vercel (or `vercel` CLI from this directory).
@@ -33,7 +33,8 @@ No router library is wired up — `src/main.tsx` does a simple path check: `/adm
 - `src/admin/` — `/admin` login + dashboard + project create/edit form (base64 image upload).
 - `src/lib/` — `firebase.ts`, `projects.ts` (Firestore CRUD), `types.ts`, `toBase64.ts`.
 - `src/hooks/useAuth.ts` — auth + admin-email gate.
-- `firestore.rules` — public read on `projects`, write restricted to the admin email.
+- `firestore.rules` — public read on `projects`, write restricted to the admin email; `messages` collection is publicly *create*-only (contact form submissions), read/update/delete restricted to the admin email.
+- Contact form ("Encrypted Channel" on the homepage) writes to the Firestore `messages` collection via `src/lib/messages.ts`; submissions appear in a "Messages" tab on the admin dashboard (mark read/unread, delete). No longer posts to Formspree.
 
 ## Notes
 - No TypeScript compiler is configured in this project (Vite/esbuild strips types without type-checking) — this matches how it was originally exported.
