@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   },
   "scripts": {
     "build": "vite build",
@@ -90,6 +90,12 @@
   "pnpm": {
     "overrides": {
       "vite": "6.3.5"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "@tailwindcss/oxide",
+      "@firebase/util",
+      "protobufjs"
+    ]
   }
 }
