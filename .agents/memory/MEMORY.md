@@ -1,0 +1,2 @@
+- [Firebase web config secrecy](firebase-web-config.md) — Firebase client config (apiKey etc.) is not a real secret; store as plain env vars, protect via Firestore rules instead.
+- [Flaticon icon requests](tech-icon-requests.md) — when asked for Flaticon-sourced tech logos, substitute react-icons/si (Simple Icons) since Flaticon isn't programmatically fetchable.

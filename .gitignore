@@ -1,0 +1,21 @@
+node_modules
+dist
+dist-ssr
+*.local
+
+# Env files — real secrets/config live in Replit Secrets or Vercel project settings
+.env
+.env.local
+.env.*.local
+
+# Original import archive
+zipFile.zip
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor/OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json

@@ -32,3 +32,15 @@ outputType = "webview"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[userenv]
+
+[userenv.shared]
+VITE_ADMIN_EMAIL = "pauladamu600@gmail.com"
+VITE_FIREBASE_API_KEY = "AIzaSyAyxA3zE9DsxJXxtJFkpjArPHc-3qa8OuE"
+VITE_FIREBASE_APP_ID = "1:293442809281:web:a99139f20a80f10f905340"
+VITE_FIREBASE_AUTH_DOMAIN = "paul-adamu.firebaseapp.com"
+VITE_FIREBASE_MEASUREMENT_ID = "G-GCNQ5NNJT5"
+VITE_FIREBASE_MESSAGING_SENDER_ID = "293442809281"
+VITE_FIREBASE_PROJECT_ID = "paul-adamu"
+VITE_FIREBASE_STORAGE_BUCKET = "paul-adamu.firebasestorage.app"

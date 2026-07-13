@@ -21,157 +21,57 @@ import {
   Eye,
   ChevronRight,
 } from "lucide-react";
+import {
+  SiTypescript,
+  SiPython,
+  SiFirebase,
+  SiJavascript,
+  SiGit,
+  SiReact,
+  SiFigma,
+  SiC,
+  SiTailwindcss,
+  SiSupabase,
+  SiOwasp,
+} from "react-icons/si";
+import type { IconType } from "react-icons";
+import type { Project } from "@/lib/types";
+import { subscribeToProjects } from "@/lib/projects";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type Page = "home" | "work" | "case-study";
 
-interface Project {
-  id: string;
-  slug: string;
-  category: "web" | "cybersec" | "design";
-  title: string;
-  description: string;
-  longDescription: string;
-  tag: string;
-  imageUrl: string;
-  featured: boolean;
-  tech: string[];
-  bars: { label: string; pct: number; color: string }[];
-  liveUrl: string;
-  year: string;
-  role: string;
-  screens: string[];
+export type { Project };
+
+// ─── Tech Stack ───────────────────────────────────────────────────────────────
+
+const TECH_STACK: { label: string; icon: IconType; color: string }[] = [
+  { label: "TypeScript", icon: SiTypescript, color: "#3178c6" },
+  { label: "Python", icon: SiPython, color: "#3776ab" },
+  { label: "Firebase", icon: SiFirebase, color: "#ffca28" },
+  { label: "JavaScript", icon: SiJavascript, color: "#f7df1e" },
+  { label: "Git", icon: SiGit, color: "#f05032" },
+  { label: "React", icon: SiReact, color: "#61dafb" },
+  { label: "Figma", icon: SiFigma, color: "#f24e1e" },
+  { label: "C", icon: SiC, color: "#a8b9cc" },
+  { label: "Tailwind CSS", icon: SiTailwindcss, color: "#38bdf8" },
+  { label: "Supabase", icon: SiSupabase, color: "#3ecf8e" },
+  { label: "OWASP", icon: SiOwasp, color: "#00549e" },
+];
+
+// ─── Projects data hook (Firestore-backed) ───────────────────────────────────
+
+function useProjects() {
+  const [projects, setProjects] = useState<Project[] | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToProjects(setProjects);
+    return unsubscribe;
+  }, []);
+
+  return projects; // null = loading, [] = loaded but empty
 }
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
-
-const PROJECTS: Project[] = [
-  {
-    id: "1",
-    slug: "biuarchive",
-    category: "web",
-    tag: "Web Platform",
-    title: "BIU Academic Archive",
-    description:
-      "A centralized student resource platform for Benson Idahosa University with gamified leaderboards, verified discussions, and past-question access.",
-    longDescription:
-      "Engineered to solve fragmentation of academic resources across a 10,000-student campus. Students access past questions, join verified department channels, and compete on gamified leaderboards. Built with real-time sync so answers and upvotes propagate instantly across all sessions.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=800&h=500&fit=crop&auto=format",
-    featured: true,
-    tech: ["HTML5", "CSS3", "JavaScript", "Firebase", "Firestore", "Auth"],
-    bars: [
-      { label: "HTML", pct: 38, color: "#f97316" },
-      { label: "CSS", pct: 28, color: "#0070f3" },
-      { label: "JavaScript", pct: 24, color: "#f59e0b" },
-      { label: "Firebase", pct: 10, color: "#00ffcc" },
-    ],
-    liveUrl: "https://pauladamu.netlify.app",
-    year: "2025",
-    role: "Lead Developer",
-    screens: [
-      "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=900&h=560&fit=crop&auto=format",
-      "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=900&h=560&fit=crop&auto=format",
-    ],
-  },
-  {
-    id: "2",
-    slug: "lhjconsult",
-    category: "web",
-    tag: "Web Development",
-    title: "LHJ Consult Wellness Platform",
-    description:
-      "Faith-based wellness and nutrition platform bridging clinical dietary science with spiritual discipline — including 21-Day challenge programs.",
-    longDescription:
-      "A comprehensive digital health platform for LHJ Consult. Clients book expert consultations, access evidence-based health guidance anchored in biblical principles, and participate in transformation programs. Features an appointment scheduling engine, resource library, and community forum.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&h=500&fit=crop&auto=format",
-    featured: false,
-    tech: ["HTML5", "CSS3", "JavaScript", "EmailJS", "Formspree"],
-    bars: [
-      { label: "HTML", pct: 45, color: "#f97316" },
-      { label: "CSS", pct: 35, color: "#0070f3" },
-      { label: "JavaScript", pct: 20, color: "#f59e0b" },
-    ],
-    liveUrl: "https://pauladamu.netlify.app",
-    year: "2025",
-    role: "Frontend Developer",
-    screens: [
-      "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=900&h=560&fit=crop&auto=format",
-      "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=900&h=560&fit=crop&auto=format",
-    ],
-  },
-  {
-    id: "3",
-    slug: "secureaudit",
-    category: "cybersec",
-    tag: "Security Tool",
-    title: "Web Security Audit Dashboard",
-    description:
-      "Real-time vulnerability scanner dashboard with OWASP Top-10 checks, threat intelligence feeds, and exportable PDF reports.",
-    longDescription:
-      "An internal security dashboard that aggregates OWASP Top-10 scan results, CVE feeds, and port-scan outputs into a unified threat map. Allows security teams to triage findings, assign remediation owners, and track SLA status — all from one glass-panel interface.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&h=500&fit=crop&auto=format",
-    featured: false,
-    tech: ["React", "TypeScript", "Python", "Nmap", "OWASP ZAP"],
-    bars: [
-      { label: "React", pct: 40, color: "#00ffcc" },
-      { label: "Python", pct: 35, color: "#3b82f6" },
-      { label: "TypeScript", pct: 25, color: "#7c3aed" },
-    ],
-    liveUrl: "https://pauladamu.netlify.app",
-    year: "2026",
-    role: "Security Engineer",
-    screens: [
-      "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=900&h=560&fit=crop&auto=format",
-      "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=900&h=560&fit=crop&auto=format",
-    ],
-  },
-  {
-    id: "4",
-    slug: "ztidesign",
-    category: "design",
-    tag: "UI Design",
-    title: "ZTI Design System",
-    description:
-      "A complete component library and design language for the ZTI brand — tokens, iconography, motion specs, and Figma primitives.",
-    longDescription:
-      "Built the ZTI Design System from scratch: color tokens, typographic scale, 40+ reusable components, motion guidelines, and a living Storybook. Reduced design-to-dev handoff time by 60% and established a consistent visual language across three active products.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=500&fit=crop&auto=format",
-    featured: false,
-    tech: ["Figma", "React", "Tailwind CSS", "Storybook", "Tokens Studio"],
-    bars: [
-      { label: "Figma", pct: 50, color: "#f97316" },
-      { label: "React", pct: 30, color: "#00ffcc" },
-      { label: "Tailwind", pct: 20, color: "#0070f3" },
-    ],
-    liveUrl: "https://pauladamu.netlify.app",
-    year: "2026",
-    role: "Design Systems Engineer",
-    screens: [
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=900&h=560&fit=crop&auto=format",
-      "https://images.unsplash.com/photo-1561736778-92e52a7769ef?w=900&h=560&fit=crop&auto=format",
-    ],
-  },
-];
-
-const TECH_STACK = [
-  { label: "React", icon: "⚛️" },
-  { label: "Firebase", icon: "🔥" },
-  { label: "Three.js", icon: "🧊" },
-  { label: "JavaScript", icon: "🟨" },
-  { label: "Tailwind CSS", icon: "🎨" },
-  { label: "Git", icon: "🌿" },
-  { label: "Next.js", icon: "▲" },
-  { label: "TypeScript", icon: "🔷" },
-  { label: "Python", icon: "🐍" },
-  { label: "OWASP", icon: "🛡️" },
-  { label: "Linux", icon: "🐧" },
-  { label: "Figma", icon: "🎭" },
-];
 
 // ─── Keyframe Styles Injected Once ───────────────────────────────────────────
 
@@ -499,7 +399,7 @@ function Typewriter({ phrases }: { phrases: string[] }) {
 // ─── Countdown Timer ─────────────────────────────────────────────────────────
 
 function CountdownTimer() {
-  const targetDate = new Date("2026-12-01T00:00:00").getTime();
+  const targetDate = new Date("2026-08-22T00:00:00").getTime();
 
   const calc = () => {
     const diff = targetDate - Date.now();
@@ -625,7 +525,7 @@ function TechMarquee() {
               whiteSpace: "nowrap",
             }}
           >
-            <span style={{ fontSize: "1rem" }}>{tech.icon}</span>
+            <tech.icon size={16} style={{ color: tech.color, flexShrink: 0 }} />
             <span
               style={{
                 fontFamily: "'JetBrains Mono', monospace",
@@ -806,6 +706,9 @@ function ProjectCard({
 function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void; setSelectedProject: (p: Project) => void }) {
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [submitted, setSubmitted] = useState(false);
+  const projects = useProjects();
+  const featured = (projects ?? []).filter((p) => p.featured).slice(0, 2);
+  const preview = featured.length > 0 ? featured : (projects ?? []).slice(0, 2);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -917,7 +820,7 @@ function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void;
                 textTransform: "uppercase",
               }}
             >
-              Cybersecurity Specialist · Frontend Developer
+              Full-Stack Developer · Cybersecurity Specialist
             </span>
           </div>
 
@@ -1114,7 +1017,7 @@ function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void;
               <p style={{ color: "#8b949e", lineHeight: 1.8 }}>
                 I specialize in crafting web experiences that are
                 pixel-precise on the surface and armored underneath. With a
-                background in both frontend engineering and cybersecurity, I
+                background in full-stack development and cybersecurity, I
                 approach every project as both a UX challenge and a threat model.
               </p>
             </div>
@@ -1170,11 +1073,19 @@ function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void;
             View All <ChevronRight size={14} />
           </button>
         </div>
-        <div className="grid md:grid-cols-2 gap-6">
-          {PROJECTS.slice(0, 2).map((p) => (
-            <ProjectCard key={p.id} project={p} onSelect={(proj) => { setSelectedProject(proj); setPage("case-study"); }} />
-          ))}
-        </div>
+        {preview.length > 0 ? (
+          <div className="grid md:grid-cols-2 gap-6">
+            {preview.map((p) => (
+              <ProjectCard key={p.id} project={p} onSelect={(proj) => { setSelectedProject(proj); setPage("case-study"); }} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 rounded-2xl" style={{ background: "rgba(22,27,34,0.5)", border: "1px dashed rgba(0,255,204,0.15)" }}>
+            <p style={{ fontFamily: "'JetBrains Mono', monospace", color: "#8b949e", fontSize: "0.85rem" }}>
+              {projects === null ? "// Loading projects…" : "// No projects published yet — check back soon"}
+            </p>
+          </div>
+        )}
       </section>
 
       {/* ── CONTACT ───────────────────────────────────────────────── */}
@@ -1403,6 +1314,7 @@ function WorkPage({
   setSelectedProject: (p: Project) => void;
 }) {
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
+  const projects = useProjects();
 
   const filters: { key: FilterKey; label: string }[] = [
     { key: "all", label: "All" },
@@ -1413,8 +1325,8 @@ function WorkPage({
 
   const filtered =
     activeFilter === "all"
-      ? PROJECTS
-      : PROJECTS.filter((p) => p.category === activeFilter);
+      ? projects ?? []
+      : (projects ?? []).filter((p) => p.category === activeFilter);
 
   return (
     <main className="min-h-screen px-6 md:px-16 lg:px-24 py-16 max-w-7xl mx-auto relative" style={{ zIndex: 1 }}>
@@ -1530,7 +1442,9 @@ function WorkPage({
       {filtered.length === 0 && (
         <div className="text-center py-24">
           <p style={{ fontFamily: "'JetBrains Mono', monospace", color: "#8b949e", fontSize: "0.85rem" }}>
-            // No projects found in this category yet
+            {projects === null
+              ? "// Loading projects…"
+              : "// No projects published in this category yet"}
           </p>
         </div>
       )}
@@ -1912,7 +1826,7 @@ function CaseStudyPage({
 
 export default function App() {
   const [page, setPage] = useState<Page>("home");
-  const [selectedProject, setSelectedProject] = useState<Project>(PROJECTS[0]);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   // Scroll to top on page change
   useEffect(() => {
@@ -1950,7 +1864,7 @@ export default function App() {
           setSelectedProject={setSelectedProject}
         />
       )}
-      {page === "case-study" && (
+      {page === "case-study" && selectedProject && (
         <CaseStudyPage project={selectedProject} setPage={setPage} />
       )}
     </div>
