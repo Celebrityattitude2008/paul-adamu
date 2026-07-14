@@ -280,10 +280,9 @@ function Header({
           href="https://linkedin.com/in/paul-adamu-67bb46324"
           target="_blank"
           rel="noreferrer"
-          aria-label="LinkedIn"
-          className="nav-link flex items-center gap-1"
+          className="nav-link"
         >
-          <Linkedin size={14} /> LinkedIn
+          LinkedIn
         </a>
         <a
           href="https://linkedin.com/in/paul-adamu-67bb46324"
@@ -359,9 +358,9 @@ function Header({
             href="https://linkedin.com/in/paul-adamu-67bb46324"
             target="_blank"
             rel="noreferrer"
-            className="nav-link flex items-center gap-1"
+            className="nav-link"
           >
-            <Linkedin size={14} /> LinkedIn
+            LinkedIn
           </a>
         </div>
       )}
