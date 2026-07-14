@@ -39,3 +39,8 @@ export interface ContactMessage {
 }
 
 export type ContactMessageInput = Pick<ContactMessage, "name" | "email" | "message">;
+
+export interface SiteSettings {
+  /** ISO date string (e.g. "2026-08-22") driving the homepage countdown timer. */
+  nextReleaseDate: string;
+}

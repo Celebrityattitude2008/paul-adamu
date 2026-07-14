@@ -26,6 +26,13 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // Public site settings (e.g. the homepage countdown target date). Anyone
+    // can read; only the admin account can write.
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidSettings();
+    }
+
     // Deny everything else by default.
     match /{document=**} {
       allow read, write: if false;
@@ -44,6 +51,12 @@ service cloud.firestore {
       data.email is string && data.email.size() > 0 && data.email.size() < 200 &&
       data.message is string && data.message.size() > 0 && data.message.size() < 5000 &&
       data.read == false;
+  }
+
+  function isValidSettings() {
+    let data = request.resource.data;
+    return !("nextReleaseDate" in data) ||
+      (data.nextReleaseDate is string && data.nextReleaseDate.size() < 40);
   }
 
   function isValidProject() {

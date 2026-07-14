@@ -35,9 +35,10 @@ import {
   SiPhp,
 } from "react-icons/si";
 import type { IconType } from "react-icons";
-import type { Project } from "@/lib/types";
+import type { Project, SiteSettings } from "@/lib/types";
 import { subscribeToProjects } from "@/lib/projects";
 import { sendMessage } from "@/lib/messages";
+import { subscribeToSiteSettings, DEFAULT_SETTINGS } from "@/lib/settings";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -73,6 +74,19 @@ function useProjects() {
   }, []);
 
   return projects; // null = loading, [] = loaded but empty
+}
+
+// ─── Site settings hook (Firestore-backed) ───────────────────────────────────
+
+function useSiteSettings() {
+  const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToSiteSettings(setSettings);
+    return unsubscribe;
+  }, []);
+
+  return settings;
 }
 
 // ─── Keyframe Styles Injected Once ───────────────────────────────────────────
@@ -266,6 +280,15 @@ function Header({
           href="https://linkedin.com/in/paul-adamu-67bb46324"
           target="_blank"
           rel="noreferrer"
+          aria-label="LinkedIn"
+          className="nav-link flex items-center gap-1"
+        >
+          <Linkedin size={14} /> LinkedIn
+        </a>
+        <a
+          href="https://linkedin.com/in/paul-adamu-67bb46324"
+          target="_blank"
+          rel="noreferrer"
           style={{
             background: "rgba(0,255,204,0.1)",
             border: "1px solid rgba(0,255,204,0.35)",
@@ -332,6 +355,14 @@ function Header({
           >
             Work
           </button>
+          <a
+            href="https://linkedin.com/in/paul-adamu-67bb46324"
+            target="_blank"
+            rel="noreferrer"
+            className="nav-link flex items-center gap-1"
+          >
+            <Linkedin size={14} /> LinkedIn
+          </a>
         </div>
       )}
     </header>
@@ -384,8 +415,8 @@ function Typewriter({ phrases }: { phrases: string[] }) {
 
 // ─── Countdown Timer ─────────────────────────────────────────────────────────
 
-function CountdownTimer() {
-  const targetDate = new Date("2026-08-22T00:00:00").getTime();
+function CountdownTimer({ targetDate: targetDateStr }: { targetDate: string }) {
+  const targetDate = new Date(`${targetDateStr}T00:00:00`).getTime();
 
   const calc = () => {
     const diff = targetDate - Date.now();
@@ -401,9 +432,11 @@ function CountdownTimer() {
   const [time, setTime] = useState(calc);
 
   useEffect(() => {
+    setTime(calc());
     const id = setInterval(() => setTime(calc()), 1000);
     return () => clearInterval(id);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetDateStr]);
 
   const units = [
     { label: "Days", value: time.d },
@@ -696,6 +729,7 @@ function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void;
   const [sendError, setSendError] = useState<string | null>(null);
   const [photoLoaded, setPhotoLoaded] = useState(false);
   const projects = useProjects();
+  const settings = useSiteSettings();
   const featured = (projects ?? []).filter((p) => p.featured).slice(0, 2);
   const preview = featured.length > 0 ? featured : (projects ?? []).slice(0, 2);
 
@@ -941,7 +975,7 @@ function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void;
 
           {/* Countdown */}
           <div className="pt-2">
-            <CountdownTimer />
+            <CountdownTimer targetDate={settings.nextReleaseDate} />
           </div>
         </div>
       </section>

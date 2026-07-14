@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import { LogOut, Mail, MailOpen, Pencil, Plus, Shield, Trash2 } from "lucide-react";
+import { LogOut, Mail, MailOpen, Pencil, Plus, Save, Shield, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { subscribeToProjects, createProject, updateProject, deleteProject } from "@/lib/projects";
 import { subscribeToMessages, markMessageRead, deleteMessage } from "@/lib/messages";
-import type { ContactMessage, Project, ProjectInput } from "@/lib/types";
+import { subscribeToSiteSettings, updateSiteSettings, DEFAULT_SETTINGS } from "@/lib/settings";
+import type { ContactMessage, Project, ProjectInput, SiteSettings } from "@/lib/types";
 import { ProjectForm } from "./ProjectForm";
 
 export function AdminDashboard() {
   const { user, logOut } = useAuth();
-  const [tab, setTab] = useState<"projects" | "messages">("projects");
+  const [tab, setTab] = useState<"projects" | "messages" | "settings">("projects");
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [mode, setMode] = useState<"list" | "create" | "edit">("list");
   const [editing, setEditing] = useState<Project | null>(null);
@@ -19,6 +20,11 @@ export function AdminDashboard() {
   const [messagesError, setMessagesError] = useState<string | null>(null);
   const unreadCount = (messages ?? []).filter((m) => !m.read).length;
 
+  const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [settingsSaved, setSettingsSaved] = useState(false);
+
   useEffect(() => {
     const unsub = subscribeToProjects(setProjects, (e) => setError(e.message));
     return unsub;
@@ -28,6 +34,27 @@ export function AdminDashboard() {
     const unsub = subscribeToMessages(setMessages, (e) => setMessagesError(e.message));
     return unsub;
   }, []);
+
+  useEffect(() => {
+    const unsub = subscribeToSiteSettings(setSettings);
+    return unsub;
+  }, []);
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSettingsSaving(true);
+    setSettingsError(null);
+    setSettingsSaved(false);
+    try {
+      await updateSiteSettings(settings);
+      setSettingsSaved(true);
+      setTimeout(() => setSettingsSaved(false), 2500);
+    } catch (e) {
+      setSettingsError(e instanceof Error ? e.message : "Failed to save settings.");
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
 
   const handleToggleRead = async (m: ContactMessage) => {
     try {
@@ -130,6 +157,7 @@ export function AdminDashboard() {
           {([
             { key: "projects", label: "Projects" },
             { key: "messages", label: `Messages${unreadCount > 0 ? ` (${unreadCount})` : ""}` },
+            { key: "settings", label: "Settings" },
           ] as const).map((t) => (
             <button
               key={t.key}
@@ -161,6 +189,65 @@ export function AdminDashboard() {
           >
             {messagesError}
           </p>
+        )}
+
+        {tab === "settings" && (
+          <form
+            onSubmit={handleSaveSettings}
+            className="flex flex-col gap-5 p-6 rounded-2xl max-w-md"
+            style={{ background: "#161b22", border: "1px solid rgba(0,255,204,0.12)" }}
+          >
+            <div className="flex flex-col gap-1.5">
+              <label
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: "0.65rem",
+                  color: "#8b949e",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Next Major Release Date
+              </label>
+              <input
+                type="date"
+                required
+                value={settings.nextReleaseDate}
+                onChange={(e) => setSettings((s) => ({ ...s, nextReleaseDate: e.target.value }))}
+                className="px-3 py-2.5 rounded-lg outline-none"
+                style={{
+                  background: "#21262d",
+                  border: "1px solid rgba(0,255,204,0.15)",
+                  color: "#f0f6fc",
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "0.88rem",
+                }}
+              />
+              <p style={{ fontSize: "0.7rem", color: "#8b949e" }}>
+                Drives the "Next Major Release" countdown on the homepage.
+              </p>
+            </div>
+
+            {settingsError && (
+              <p className="text-sm" style={{ color: "#f85149" }}>
+                {settingsError}
+              </p>
+            )}
+
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                disabled={settingsSaving}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50"
+                style={{ background: "#00ffcc", color: "#0d1117" }}
+              >
+                <Save size={14} /> {settingsSaving ? "Saving…" : "Save"}
+              </button>
+              {settingsSaved && (
+                <span style={{ fontSize: "0.8rem", color: "#00ffcc" }}>Saved.</span>
+              )}
+            </div>
+          </form>
         )}
 
         {tab === "messages" && (

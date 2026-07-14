@@ -39,6 +39,9 @@ No router library is wired up — `src/main.tsx` does a simple path check: `/adm
 - `liveUrl` is auto-prefixed with `https://` on save if the admin omits the protocol, so links can't point back into the site's own domain.
 - GitHub links/icons removed site-wide (nav, mobile menu, footer) per user preference — public GitHub profile no longer linked from the portfolio.
 - Footer simplified to a single line: "© 2026 Paul Adamu All Rights Reserved".
+- Nav's LinkedIn link (desktop + mobile) now sits where GitHub used to be.
+- Homepage "Next Major Release" countdown reads its target date from Firestore (`settings/site`, `src/lib/settings.ts`), editable from a new "Settings" tab in the admin dashboard. Falls back to a default date if Firestore/rules aren't reachable.
+- Still-pending manual Firebase Console step (unchanged from earlier): deploy the current `firestore.rules` — it now also gates the new `settings/site` document, so until it's deployed the countdown silently uses its default date and admin edits to it will fail with "permission-denied".
 
 ## Notes
 - No TypeScript compiler is configured in this project (Vite/esbuild strips types without type-checking) — this matches how it was originally exported.
