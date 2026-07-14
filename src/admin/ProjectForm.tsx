@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Loader2, UploadCloud, X } from "lucide-react";
-import type { Project, ProjectCategory, ProjectInput } from "@/lib/types";
+import { Loader2, Plus, UploadCloud, X } from "lucide-react";
+import type { LanguageBar, Project, ProjectCategory, ProjectInput } from "@/lib/types";
 import { fileToBase64 } from "@/lib/toBase64";
+import { ImageCropperModal } from "./ImageCropperModal";
 
 const CATEGORIES: ProjectCategory[] = ["web", "cybersec", "design"];
+const BAR_COLORS = ["#00ffcc", "#0070f3", "#f85149", "#e3b341", "#a78bfa", "#3fb950"];
 
 const inputStyle: React.CSSProperties = {
   background: "#21262d",
@@ -74,33 +76,71 @@ export function ProjectForm({
   const [techInput, setTechInput] = useState(initial?.tech.join(", ") ?? "");
   const [uploadError, setUploadError] = useState<string | null>(null);
 
+  // Raw file picked by the user, staged for the crop modal before it's
+  // resized/compressed and turned into the final base64 data URI.
+  const [cropTarget, setCropTarget] = useState<
+    { kind: "cover" } | { kind: "screen"; replaceIndex?: number } | null
+  >(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+
   const set = <K extends keyof ProjectInput>(key: K, value: ProjectInput[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
-  const MAX_BYTES = 700_000; // keep well under Firestore's 1MB document limit
+  // Raw upload cap before cropping/compression — generous since the cropper
+  // downsizes and re-encodes the image afterwards to fit Firestore's limit.
+  const MAX_UPLOAD_BYTES = 15_000_000;
 
-  const handleCoverUpload = async (file: File) => {
+  const openCropper = async (file: File, target: { kind: "cover" } | { kind: "screen"; replaceIndex?: number }) => {
     setUploadError(null);
-    if (file.size > MAX_BYTES) {
-      setUploadError("Image too large — please use one under ~700KB.");
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setUploadError("Image too large — please use one under 15MB.");
       return;
     }
-    const base64 = await fileToBase64(file);
-    set("imageUrl", base64);
+    const raw = await fileToBase64(file);
+    setCropSrc(raw);
+    setCropTarget(target);
   };
 
-  const handleScreenUpload = async (file: File) => {
-    setUploadError(null);
-    if (file.size > MAX_BYTES) {
-      setUploadError("Image too large — please use one under ~700KB.");
-      return;
+  const handleCropSave = (croppedDataUrl: string) => {
+    if (cropTarget?.kind === "cover") {
+      set("imageUrl", croppedDataUrl);
+    } else if (cropTarget?.kind === "screen") {
+      if (cropTarget.replaceIndex !== undefined) {
+        set(
+          "screens",
+          form.screens.map((s, i) => (i === cropTarget.replaceIndex ? croppedDataUrl : s))
+        );
+      } else {
+        set("screens", [...form.screens, croppedDataUrl]);
+      }
     }
-    const base64 = await fileToBase64(file);
-    set("screens", [...form.screens, base64]);
+    setCropSrc(null);
+    setCropTarget(null);
   };
 
   const removeScreen = (idx: number) =>
     set("screens", form.screens.filter((_, i) => i !== idx));
+
+  const addBar = () =>
+    set("bars", [
+      ...form.bars,
+      { label: "", pct: 0, color: BAR_COLORS[form.bars.length % BAR_COLORS.length] },
+    ]);
+
+  const updateBar = (idx: number, patch: Partial<LanguageBar>) =>
+    set(
+      "bars",
+      form.bars.map((b, i) => (i === idx ? { ...b, ...patch } : b))
+    );
+
+  const removeBar = (idx: number) =>
+    set("bars", form.bars.filter((_, i) => i !== idx));
+
+  const normalizeUrl = (url: string) => {
+    const trimmed = url.trim();
+    if (!trimmed) return trimmed;
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,7 +148,7 @@ export function ProjectForm({
       .split(",")
       .map((t) => t.trim())
       .filter(Boolean);
-    await onSubmit({ ...form, tech });
+    await onSubmit({ ...form, tech, liveUrl: normalizeUrl(form.liveUrl) });
   };
 
   return (
@@ -220,9 +260,13 @@ export function ProjectForm({
             required
             value={form.liveUrl}
             onChange={(e) => set("liveUrl", e.target.value)}
+            placeholder="foundit-biu.vercel.app"
             className="px-3 py-2.5 rounded-lg outline-none"
             style={inputStyle}
           />
+          <p style={{ fontSize: "0.68rem", color: "#8b949e" }}>
+            https:// is added automatically if you leave it out.
+          </p>
         </div>
       </div>
 
@@ -235,6 +279,67 @@ export function ProjectForm({
           className="px-3 py-2.5 rounded-lg outline-none"
           style={inputStyle}
         />
+        <p style={{ fontSize: "0.68rem", color: "#8b949e" }}>
+          Shown as tags. For the stylized percentage bars, use "Language Breakdown" below.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-2.5">
+        <div className="flex items-center justify-between">
+          <label style={labelStyle}>Language / Tech Breakdown</label>
+          <button
+            type="button"
+            onClick={addBar}
+            className="flex items-center gap-1 text-xs font-semibold"
+            style={{ color: "#00ffcc" }}
+          >
+            <Plus size={13} /> Add row
+          </button>
+        </div>
+        {form.bars.length === 0 && (
+          <p style={{ fontSize: "0.72rem", color: "#8b949e" }}>
+            No breakdown yet — add rows like "TypeScript 62%" to show a stylized percentage bar on the case study page.
+          </p>
+        )}
+        <div className="flex flex-col gap-2">
+          {form.bars.map((bar, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                value={bar.label}
+                onChange={(e) => updateBar(i, { label: e.target.value })}
+                placeholder="TypeScript"
+                className="flex-1 px-3 py-2 rounded-lg outline-none text-sm"
+                style={inputStyle}
+              />
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={bar.pct}
+                onChange={(e) => updateBar(i, { pct: Math.max(0, Math.min(100, Number(e.target.value))) })}
+                className="w-20 px-3 py-2 rounded-lg outline-none text-sm"
+                style={inputStyle}
+              />
+              <span style={{ fontSize: "0.8rem", color: "#8b949e" }}>%</span>
+              <input
+                type="color"
+                value={bar.color}
+                onChange={(e) => updateBar(i, { color: e.target.value })}
+                className="w-8 h-8 rounded cursor-pointer"
+                style={{ border: "1px solid rgba(0,255,204,0.2)", background: "transparent" }}
+              />
+              <button
+                type="button"
+                onClick={() => removeBar(i)}
+                className="p-1.5 rounded-lg flex-shrink-0"
+                style={{ background: "rgba(248,81,73,0.1)", color: "#f85149" }}
+                aria-label="Remove row"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
 
       <label className="flex items-center gap-2 text-sm" style={{ color: "#f0f6fc" }}>
@@ -250,12 +355,25 @@ export function ProjectForm({
         <label style={labelStyle}>Cover Image</label>
         <div className="flex items-center gap-4">
           {form.imageUrl && (
-            <img
-              src={form.imageUrl}
-              alt="Cover preview"
-              className="w-20 h-14 object-cover rounded-lg"
-              style={{ border: "1px solid rgba(0,255,204,0.2)" }}
-            />
+            <div className="relative group">
+              <img
+                src={form.imageUrl}
+                alt="Cover preview"
+                className="w-20 h-14 object-cover rounded-lg"
+                style={{ border: "1px solid rgba(0,255,204,0.2)" }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setCropSrc(form.imageUrl);
+                  setCropTarget({ kind: "cover" });
+                }}
+                className="absolute inset-0 flex items-center justify-center rounded-lg text-[0.6rem] font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{ background: "rgba(0,0,0,0.55)", color: "#00ffcc" }}
+              >
+                Re-crop
+              </button>
+            </div>
           )}
           <label
             className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm cursor-pointer"
@@ -267,23 +385,40 @@ export function ProjectForm({
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => e.target.files?.[0] && handleCoverUpload(e.target.files[0])}
+              onChange={(e) => {
+                if (e.target.files?.[0]) openCropper(e.target.files[0], { kind: "cover" });
+                e.target.value = "";
+              }}
             />
           </label>
         </div>
+        <p style={{ fontSize: "0.68rem", color: "#8b949e" }}>
+          Up to 15MB — you'll crop and position it next, then it's compressed automatically to fit.
+        </p>
       </div>
 
       <div className="flex flex-col gap-2">
         <label style={labelStyle}>Additional Screenshots</label>
         <div className="flex flex-wrap gap-3">
           {form.screens.map((src, i) => (
-            <div key={i} className="relative">
+            <div key={i} className="relative group">
               <img
                 src={src}
                 alt={`Screen ${i + 1}`}
                 className="w-24 h-16 object-cover rounded-lg"
                 style={{ border: "1px solid rgba(0,255,204,0.2)" }}
               />
+              <button
+                type="button"
+                onClick={() => {
+                  setCropSrc(src);
+                  setCropTarget({ kind: "screen", replaceIndex: i });
+                }}
+                className="absolute inset-0 flex items-center justify-center rounded-lg text-[0.6rem] font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{ background: "rgba(0,0,0,0.55)", color: "#00ffcc" }}
+              >
+                Re-crop
+              </button>
               <button
                 type="button"
                 onClick={() => removeScreen(i)}
@@ -303,7 +438,10 @@ export function ProjectForm({
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => e.target.files?.[0] && handleScreenUpload(e.target.files[0])}
+              onChange={(e) => {
+                if (e.target.files?.[0]) openCropper(e.target.files[0], { kind: "screen" });
+                e.target.value = "";
+              }}
             />
           </label>
         </div>
@@ -313,6 +451,18 @@ export function ProjectForm({
         <p className="text-xs" style={{ color: "#f85149" }}>
           {uploadError}
         </p>
+      )}
+
+      {cropSrc && (
+        <ImageCropperModal
+          src={cropSrc}
+          aspect={cropTarget?.kind === "cover" ? 16 / 9 : 16 / 10}
+          onCancel={() => {
+            setCropSrc(null);
+            setCropTarget(null);
+          }}
+          onSave={handleCropSave}
+        />
       )}
 
       <div className="flex gap-3 justify-end pt-2">

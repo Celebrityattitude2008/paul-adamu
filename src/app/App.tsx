@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
 import paulPhoto from "@/imports/paul.png";
 import {
-  Github,
   Linkedin,
   Instagram,
   Youtube,
@@ -264,14 +263,6 @@ function Header({
           Work
         </button>
         <a
-          href="https://github.com/Celebrityattitude2008"
-          target="_blank"
-          rel="noreferrer"
-          className="nav-link flex items-center gap-1"
-        >
-          <Github size={14} /> GitHub
-        </a>
-        <a
           href="https://linkedin.com/in/paul-adamu-67bb46324"
           target="_blank"
           rel="noreferrer"
@@ -341,14 +332,6 @@ function Header({
           >
             Work
           </button>
-          <a
-            href="https://github.com/Celebrityattitude2008"
-            target="_blank"
-            rel="noreferrer"
-            className="nav-link"
-          >
-            GitHub
-          </a>
         </div>
       )}
     </header>
@@ -711,6 +694,7 @@ function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void;
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [photoLoaded, setPhotoLoaded] = useState(false);
   const projects = useProjects();
   const featured = (projects ?? []).filter((p) => p.featured).slice(0, 2);
   const preview = featured.length > 0 ? featured : (projects ?? []).slice(0, 2);
@@ -757,8 +741,30 @@ function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void;
               src={paulPhoto}
               alt="Paul Adamu — Full-Stack Developer & Cybersecurity Specialist"
               className="w-full h-full object-cover object-top"
-              style={{ transform: "rotate(90deg) scale(1.4)", transformOrigin: "center center" }}
+              style={{
+                transform: "rotate(90deg) scale(1.4)",
+                transformOrigin: "center center",
+                opacity: photoLoaded ? 1 : 0,
+                transition: "opacity 0.4s ease",
+              }}
+              onLoad={() => setPhotoLoaded(true)}
             />
+            {!photoLoaded && (
+              <div
+                className="absolute inset-0 flex items-center justify-center"
+                style={{ background: "#161b22" }}
+              >
+                <div
+                  className="rounded-full animate-spin"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    border: "3px solid rgba(0,255,204,0.15)",
+                    borderTopColor: "#00ffcc",
+                  }}
+                />
+              </div>
+            )}
             {/* Scan line effect */}
             <div
               className="absolute left-0 right-0 pointer-events-none"
@@ -1280,7 +1286,6 @@ function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void;
         <div className="flex justify-center gap-6 mb-6">
           {[
             { href: "https://linkedin.com/in/paul-adamu-67bb46324", icon: <Linkedin size={20} />, label: "LinkedIn" },
-            { href: "https://github.com/Celebrityattitude2008", icon: <Github size={20} />, label: "GitHub" },
             { href: "https://www.instagram.com/pa_zti", icon: <Instagram size={20} />, label: "Instagram" },
             { href: "https://www.youtube.com/@officialpauladamu", icon: <Youtube size={20} />, label: "YouTube" },
           ].map(({ href, icon, label }) => (
@@ -1314,7 +1319,7 @@ function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void;
             textTransform: "uppercase",
           }}
         >
-          © 2026 Paul Adamu // ZTI // All Rights Reserved
+          © 2026 Paul Adamu All Rights Reserved
         </p>
       </footer>
     </main>

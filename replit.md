@@ -35,6 +35,10 @@ No router library is wired up — `src/main.tsx` does a simple path check: `/adm
 - `src/hooks/useAuth.ts` — auth + admin-email gate.
 - `firestore.rules` — public read on `projects`, write restricted to the admin email; `messages` collection is publicly *create*-only (contact form submissions), read/update/delete restricted to the admin email.
 - Contact form ("Encrypted Channel" on the homepage) writes to the Firestore `messages` collection via `src/lib/messages.ts`; submissions appear in a "Messages" tab on the admin dashboard (mark read/unread, delete). No longer posts to Formspree.
+- Admin project form: cover/screenshot uploads open a crop-and-zoom modal (`react-easy-crop`, `src/admin/ImageCropperModal.tsx`) before saving — users can now upload originals up to 15MB, which get cropped, downsized, and compressed client-side (`src/lib/cropImage.ts`) to fit Firestore's document limit. A "Language / Tech Breakdown" editor (label + % + color, dynamic rows) was added so the stylized percentage bars on the case-study page are actually editable instead of only settable via raw data.
+- `liveUrl` is auto-prefixed with `https://` on save if the admin omits the protocol, so links can't point back into the site's own domain.
+- GitHub links/icons removed site-wide (nav, mobile menu, footer) per user preference — public GitHub profile no longer linked from the portfolio.
+- Footer simplified to a single line: "© 2026 Paul Adamu All Rights Reserved".
 
 ## Notes
 - No TypeScript compiler is configured in this project (Vite/esbuild strips types without type-checking) — this matches how it was originally exported.
