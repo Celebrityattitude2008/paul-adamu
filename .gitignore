@@ -11,6 +11,13 @@ dist-ssr
 # Original import archive
 zipFile.zip
 
+# Replit-only mockup sandbox (dev tooling, not part of the app)
+artifacts/
+
+# Agent memory (Replit-internal)
+.agents/
+.local/
+
 # Logs
 *.log
 npm-debug.log*
