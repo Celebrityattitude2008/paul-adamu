@@ -2,23 +2,26 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
 import paulPhoto from "@/imports/paul.png";
 import {
+  Github,
   Linkedin,
   Instagram,
   Youtube,
   ExternalLink,
   ArrowRight,
-  Shield,
+  ShieldCheck,
   Code2,
   ChevronLeft,
   Menu,
   X,
   Lock,
   Globe,
-  Cpu,
   Terminal,
   Layers,
   Eye,
   ChevronRight,
+  Mail,
+  Server,
+  Shield,
 } from "lucide-react";
 import {
   SiTypescript,
@@ -51,372 +54,65 @@ export type { Project };
 const TECH_STACK: { label: string; icon: IconType; color: string }[] = [
   { label: "TypeScript", icon: SiTypescript, color: "#3178c6" },
   { label: "Python", icon: SiPython, color: "#3776ab" },
-  { label: "Firebase", icon: SiFirebase, color: "#ffca28" },
-  { label: "JavaScript", icon: SiJavascript, color: "#f7df1e" },
+  { label: "Firebase", icon: SiFirebase, color: "#f59e0b" },
+  { label: "JavaScript", icon: SiJavascript, color: "#d97706" },
   { label: "Git", icon: SiGit, color: "#f05032" },
-  { label: "React", icon: SiReact, color: "#61dafb" },
+  { label: "React", icon: SiReact, color: "#0ea5e9" },
   { label: "Figma", icon: SiFigma, color: "#f24e1e" },
-  { label: "C", icon: SiC, color: "#a8b9cc" },
-  { label: "Tailwind CSS", icon: SiTailwindcss, color: "#38bdf8" },
-  { label: "Supabase", icon: SiSupabase, color: "#3ecf8e" },
-  { label: "OWASP", icon: SiOwasp, color: "#00549e" },
-  { label: "PHP", icon: SiPhp, color: "#777bb4" },
+  { label: "C", icon: SiC, color: "#6b7280" },
+  { label: "Tailwind CSS", icon: SiTailwindcss, color: "#0ea5e9" },
+  { label: "Supabase", icon: SiSupabase, color: "#10b981" },
+  { label: "OWASP", icon: SiOwasp, color: "#d97706" },
+  { label: "PHP", icon: SiPhp, color: "#7c3aed" },
 ];
 
-// ─── Projects data hook (Firestore-backed) ───────────────────────────────────
-
-function useProjects() {
-  const [projects, setProjects] = useState<Project[] | null>(null);
-
-  useEffect(() => {
-    const unsubscribe = subscribeToProjects(setProjects);
-    return unsubscribe;
-  }, []);
-
-  return projects; // null = loading, [] = loaded but empty
-}
-
-// ─── Site settings hook (Firestore-backed) ───────────────────────────────────
-
-function useSiteSettings() {
-  const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
-
-  useEffect(() => {
-    const unsubscribe = subscribeToSiteSettings(setSettings);
-    return unsubscribe;
-  }, []);
-
-  return settings;
-}
-
-// ─── Keyframe Styles Injected Once ───────────────────────────────────────────
+// ─── Global Styles ────────────────────────────────────────────────────────────
 
 const GLOBAL_STYLES = `
   @keyframes marquee {
     0%   { transform: translateX(0); }
     100% { transform: translateX(-50%); }
   }
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0; }
-  }
   @keyframes floatUp {
-    0%   { opacity: 0; transform: translateY(24px); }
+    0%   { opacity: 0; transform: translateY(20px); }
     100% { opacity: 1; transform: translateY(0); }
   }
-  @keyframes pulseGlow {
-    0%, 100% { box-shadow: 0 0 12px rgba(0,255,204,0.3); }
-    50%       { box-shadow: 0 0 28px rgba(0,255,204,0.7), 0 0 60px rgba(0,255,204,0.2); }
+  @keyframes pulseAmber {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
   }
-  @keyframes scanline {
-    0%   { top: -10%; }
-    100% { top: 110%; }
-  }
-  @keyframes starDrift {
-    0%   { transform: translateY(0px);   opacity: 0.6; }
-    50%  { opacity: 1; }
-    100% { transform: translateY(-60px); opacity: 0; }
-  }
-  @keyframes gridFade {
-    0%   { opacity: 0.04; }
-    100% { opacity: 0.07; }
-  }
-  .marquee-inner { animation: marquee 28s linear infinite; }
-  .cursor-blink  { animation: blink 1s step-end infinite; }
-  .float-in      { animation: floatUp 0.7s ease both; }
-  .pulse-glow    { animation: pulseGlow 3s ease-in-out infinite; }
+  .marquee-inner { animation: marquee 32s linear infinite; }
+  .float-in      { animation: floatUp 0.6s ease both; }
 
   ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: #0d1117; }
-  ::-webkit-scrollbar-thumb { background: rgba(0,255,204,0.3); border-radius: 2px; }
-
-  .nav-link {
-    position: relative;
-    color: #8b949e;
-    font-size: 0.82rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    transition: color 0.3s;
-    font-family: 'JetBrains Mono', monospace;
-  }
-  .nav-link::after {
-    content: '';
-    position: absolute;
-    left: 0; bottom: -3px;
-    width: 0; height: 1px;
-    background: #00ffcc;
-    transition: width 0.35s cubic-bezier(0.4,0,0.2,1);
-  }
-  .nav-link:hover { color: #00ffcc; }
-  .nav-link:hover::after { width: 100%; }
-  .nav-link.active { color: #00ffcc; }
-  .nav-link.active::after { width: 100%; }
-
-  .tilt-card {
-    transform-style: preserve-3d;
-    transition: transform 0.15s ease, box-shadow 0.3s ease;
-  }
+  ::-webkit-scrollbar-track { background: #fafaf8; }
+  ::-webkit-scrollbar-thumb { background: #fbbf24; border-radius: 2px; }
 `;
 
-// ─── Star Field Background ────────────────────────────────────────────────────
+// ─── Data Hooks ───────────────────────────────────────────────────────────────
 
-function StarField() {
-  const stars = Array.from({ length: 80 }, (_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    size: Math.random() * 1.5 + 0.5,
-    delay: Math.random() * 6,
-    dur: Math.random() * 4 + 4,
-  }));
-
-  return (
-    <div
-      className="fixed inset-0 pointer-events-none overflow-hidden"
-      style={{ zIndex: 0 }}
-    >
-      {/* Subtle grid */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(0,255,204,0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0,255,204,0.04) 1px, transparent 1px)
-          `,
-          backgroundSize: "60px 60px",
-        }}
-      />
-      {/* Stars */}
-      {stars.map((s) => (
-        <div
-          key={s.id}
-          className="absolute rounded-full bg-white"
-          style={{
-            left: `${s.x}%`,
-            top: `${s.y}%`,
-            width: s.size,
-            height: s.size,
-            opacity: 0.4,
-            animation: `starDrift ${s.dur}s ${s.delay}s ease-in-out infinite alternate`,
-          }}
-        />
-      ))}
-      {/* Gradient vignette */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse at 50% 0%, rgba(0,112,243,0.08) 0%, transparent 70%)",
-        }}
-      />
-    </div>
-  );
-}
-
-// ─── Header ───────────────────────────────────────────────────────────────────
-
-function Header({
-  page,
-  setPage,
-}: {
-  page: Page;
-  setPage: (p: Page) => void;
-}) {
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  return (
-    <header
-      className="sticky top-0 z-50 flex items-center justify-between px-6 md:px-12 py-4"
-      style={{
-        background: "rgba(13,17,23,0.88)",
-        backdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(0,255,204,0.1)",
-      }}
-    >
-      {/* Logo */}
-      <button
-        onClick={() => setPage("home")}
-        className="flex items-center gap-2 group"
-      >
-        <div
-          className="w-8 h-8 rounded flex items-center justify-center text-xs font-bold"
-          style={{
-            background: "rgba(0,255,204,0.12)",
-            border: "1px solid rgba(0,255,204,0.4)",
-            color: "#00ffcc",
-            fontFamily: "'Orbitron', sans-serif",
-            fontSize: "0.6rem",
-            letterSpacing: "0.05em",
-          }}
-        >
-          ZTI
-        </div>
-        <span
-          style={{
-            fontFamily: "'Orbitron', sans-serif",
-            fontSize: "1rem",
-            fontWeight: 700,
-            color: "#00ffcc",
-            letterSpacing: "0.02em",
-          }}
-        >
-          Paul Adamu
-        </span>
-      </button>
-
-      {/* Desktop nav */}
-      <nav className="hidden md:flex items-center gap-8">
-        <button className="nav-link" onClick={() => setPage("home")}>
-          Home
-        </button>
-        <button
-          className={`nav-link ${page === "work" || page === "case-study" ? "active" : ""}`}
-          onClick={() => setPage("work")}
-        >
-          Work
-        </button>
-        <a
-          href="https://linkedin.com/in/paul-adamu-67bb46324"
-          target="_blank"
-          rel="noreferrer"
-          className="nav-link"
-        >
-          LinkedIn
-        </a>
-        <a
-          href="https://linkedin.com/in/paul-adamu-67bb46324"
-          target="_blank"
-          rel="noreferrer"
-          style={{
-            background: "rgba(0,255,204,0.1)",
-            border: "1px solid rgba(0,255,204,0.35)",
-            color: "#00ffcc",
-            padding: "0.42rem 1.1rem",
-            borderRadius: "6px",
-            fontSize: "0.78rem",
-            fontWeight: 600,
-            fontFamily: "'JetBrains Mono', monospace",
-            letterSpacing: "0.07em",
-            textTransform: "uppercase",
-            transition: "background 0.3s, box-shadow 0.3s",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLAnchorElement).style.background =
-              "rgba(0,255,204,0.2)";
-            (e.currentTarget as HTMLAnchorElement).style.boxShadow =
-              "0 0 16px rgba(0,255,204,0.3)";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLAnchorElement).style.background =
-              "rgba(0,255,204,0.1)";
-            (e.currentTarget as HTMLAnchorElement).style.boxShadow = "none";
-          }}
-        >
-          Hire Me
-        </a>
-      </nav>
-
-      {/* Mobile menu button */}
-      <button
-        className="md:hidden"
-        style={{ color: "#8b949e" }}
-        onClick={() => setMenuOpen(!menuOpen)}
-      >
-        {menuOpen ? <X size={20} /> : <Menu size={20} />}
-      </button>
-
-      {/* Mobile menu */}
-      {menuOpen && (
-        <div
-          className="absolute top-full left-0 right-0 flex flex-col gap-4 px-6 py-6 md:hidden"
-          style={{
-            background: "rgba(13,17,23,0.97)",
-            backdropFilter: "blur(20px)",
-            borderBottom: "1px solid rgba(0,255,204,0.1)",
-          }}
-        >
-          <button
-            className="nav-link text-left"
-            onClick={() => {
-              setPage("home");
-              setMenuOpen(false);
-            }}
-          >
-            Home
-          </button>
-          <button
-            className="nav-link text-left"
-            onClick={() => {
-              setPage("work");
-              setMenuOpen(false);
-            }}
-          >
-            Work
-          </button>
-          <a
-            href="https://linkedin.com/in/paul-adamu-67bb46324"
-            target="_blank"
-            rel="noreferrer"
-            className="nav-link"
-          >
-            LinkedIn
-          </a>
-        </div>
-      )}
-    </header>
-  );
-}
-
-// ─── Typewriter ───────────────────────────────────────────────────────────────
-
-function Typewriter({ phrases }: { phrases: string[] }) {
-  const [displayText, setDisplayText] = useState("");
-  const [phraseIdx, setPhraseIdx] = useState(0);
-  const [charIdx, setCharIdx] = useState(0);
-  const [deleting, setDeleting] = useState(false);
-
+function useProjects() {
+  const [projects, setProjects] = useState<Project[] | null>(null);
   useEffect(() => {
-    const current = phrases[phraseIdx];
-    const speed = deleting ? 40 : 80;
+    const unsub = subscribeToProjects(setProjects);
+    return unsub;
+  }, []);
+  return projects;
+}
 
-    const t = setTimeout(() => {
-      if (!deleting) {
-        if (charIdx < current.length) {
-          setDisplayText(current.slice(0, charIdx + 1));
-          setCharIdx((c) => c + 1);
-        } else {
-          setTimeout(() => setDeleting(true), 1800);
-        }
-      } else {
-        if (charIdx > 0) {
-          setDisplayText(current.slice(0, charIdx - 1));
-          setCharIdx((c) => c - 1);
-        } else {
-          setDeleting(false);
-          setPhraseIdx((i) => (i + 1) % phrases.length);
-        }
-      }
-    }, speed);
-
-    return () => clearTimeout(t);
-  }, [charIdx, deleting, phraseIdx, phrases]);
-
-  return (
-    <span style={{ color: "#00ffcc" }}>
-      {displayText}
-      <span className="cursor-blink" style={{ color: "#00ffcc" }}>
-        |
-      </span>
-    </span>
-  );
+function useSiteSettings() {
+  const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
+  useEffect(() => {
+    const unsub = subscribeToSiteSettings(setSettings);
+    return unsub;
+  }, []);
+  return settings;
 }
 
 // ─── Countdown Timer ─────────────────────────────────────────────────────────
 
 function CountdownTimer({ targetDate: targetDateStr }: { targetDate: string }) {
   const targetDate = new Date(`${targetDateStr}T00:00:00`).getTime();
-
   const calc = () => {
     const diff = targetDate - Date.now();
     if (diff <= 0) return { d: 0, h: 0, m: 0, s: 0 };
@@ -427,9 +123,7 @@ function CountdownTimer({ targetDate: targetDateStr }: { targetDate: string }) {
       s: Math.floor((diff % 60000) / 1000),
     };
   };
-
   const [time, setTime] = useState(calc);
-
   useEffect(() => {
     setTime(calc());
     const id = setInterval(() => setTime(calc()), 1000);
@@ -445,60 +139,20 @@ function CountdownTimer({ targetDate: targetDateStr }: { targetDate: string }) {
   ];
 
   return (
-    <div className="flex flex-col items-start gap-3">
-      <div className="flex items-center gap-2">
-        <div
-          className="w-1.5 h-1.5 rounded-full"
-          style={{
-            background: "#00ffcc",
-            boxShadow: "0 0 6px #00ffcc",
-            animation: "pulseGlow 1.5s ease-in-out infinite",
-          }}
-        />
-        <span
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: "0.7rem",
-            color: "#8b949e",
-            letterSpacing: "0.15em",
-            textTransform: "uppercase",
-          }}
-        >
-          Next Major Release
-        </span>
-      </div>
-      <div className="flex gap-3">
+    <div className="flex flex-col items-start gap-2">
+      <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest">
+        Next Major Release
+      </p>
+      <div className="flex gap-2">
         {units.map(({ label, value }) => (
           <div
             key={label}
-            className="flex flex-col items-center px-3 py-2.5 rounded-lg min-w-[64px]"
-            style={{
-              background: "rgba(0,255,204,0.04)",
-              border: "1px solid rgba(0,255,204,0.18)",
-            }}
+            className="flex flex-col items-center px-3 py-2 rounded-xl border border-stone-200 bg-white min-w-[56px]"
           >
-            <span
-              style={{
-                fontFamily: "'Orbitron', sans-serif",
-                fontSize: "1.8rem",
-                fontWeight: 700,
-                color: "#00ffcc",
-                lineHeight: 1,
-                textShadow: "0 0 14px rgba(0,255,204,0.5)",
-              }}
-            >
+            <span className="text-xl font-bold text-[#1C1917] font-['Plus_Jakarta_Sans']">
               {String(value).padStart(2, "0")}
             </span>
-            <span
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: "0.6rem",
-                color: "#8b949e",
-                marginTop: "0.3rem",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-              }}
-            >
+            <span className="text-[10px] text-stone-400 font-medium uppercase tracking-wider mt-0.5">
               {label}
             </span>
           </div>
@@ -508,53 +162,29 @@ function CountdownTimer({ targetDate: targetDateStr }: { targetDate: string }) {
   );
 }
 
-// ─── Tech Stack Marquee ───────────────────────────────────────────────────────
+// ─── Tech Marquee ─────────────────────────────────────────────────────────────
 
 function TechMarquee() {
   const doubled = [...TECH_STACK, ...TECH_STACK];
-
   return (
-    <div className="relative w-full overflow-hidden py-6" style={{ background: "rgba(22,27,34,0.6)", borderTop: "1px solid rgba(0,255,204,0.08)", borderBottom: "1px solid rgba(0,255,204,0.08)" }}>
-      {/* Left fade */}
+    <div className="relative w-full overflow-hidden py-5 border-y border-stone-200/80 bg-white/60">
       <div
-        className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
-        style={{
-          background:
-            "linear-gradient(to right, #0d1117 0%, transparent 100%)",
-        }}
+        className="absolute left-0 top-0 bottom-0 w-20 z-10 pointer-events-none"
+        style={{ background: "linear-gradient(to right, #fafaf8 0%, transparent 100%)" }}
       />
-      {/* Right fade */}
       <div
-        className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
-        style={{
-          background:
-            "linear-gradient(to left, #0d1117 0%, transparent 100%)",
-        }}
+        className="absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none"
+        style={{ background: "linear-gradient(to left, #fafaf8 0%, transparent 100%)" }}
       />
-
       <div className="flex marquee-inner" style={{ width: "max-content" }}>
         {doubled.map((tech, i) => (
           <div
             key={i}
-            className="flex items-center gap-2 mx-5 px-4 py-2 rounded-full select-none"
-            style={{
-              background: "rgba(33,38,45,0.8)",
-              border: "1px solid rgba(0,255,204,0.12)",
-              whiteSpace: "nowrap",
-            }}
+            className="flex items-center gap-2 mx-4 px-4 py-2 rounded-full bg-stone-50 border border-stone-200 select-none"
+            style={{ whiteSpace: "nowrap" }}
           >
-            <tech.icon size={16} style={{ color: tech.color, flexShrink: 0 }} />
-            <span
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: "0.78rem",
-                fontWeight: 500,
-                color: "#8b949e",
-                letterSpacing: "0.04em",
-              }}
-            >
-              {tech.label}
-            </span>
+            <tech.icon size={15} style={{ color: tech.color, flexShrink: 0 }} />
+            <span className="text-sm font-medium text-stone-500">{tech.label}</span>
           </div>
         ))}
       </div>
@@ -562,157 +192,175 @@ function TechMarquee() {
   );
 }
 
+// ─── Header ───────────────────────────────────────────────────────────────────
+
+function Header({ page, setPage }: { page: Page; setPage: (p: Page) => void }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  return (
+    <header className="sticky top-0 z-50 bg-[#FAFAF8]/90 backdrop-blur-md border-b border-stone-200/60">
+      <div className="max-w-6xl mx-auto px-6 h-18 flex items-center justify-between py-4">
+        {/* Logo */}
+        <button
+          onClick={() => setPage("home")}
+          className="flex items-center gap-2 group"
+        >
+          <div className="w-8 h-8 rounded-lg bg-amber-400 flex items-center justify-center text-amber-950 font-bold text-sm font-['Plus_Jakarta_Sans']">
+            P
+          </div>
+          <span className="font-bold text-xl text-[#1C1917] font-['Plus_Jakarta_Sans'] tracking-tight">
+            Paul Adamu
+          </span>
+        </button>
+
+        {/* Desktop Nav */}
+        <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-stone-500">
+          <button
+            onClick={() => setPage("home")}
+            className={`hover:text-amber-600 transition-colors ${page === "home" ? "text-amber-600" : ""}`}
+          >
+            Home
+          </button>
+          <button
+            onClick={() => setPage("work")}
+            className={`hover:text-amber-600 transition-colors ${page === "work" || page === "case-study" ? "text-amber-600" : ""}`}
+          >
+            Work
+          </button>
+          <a
+            href="https://github.com/pazti"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-amber-600 transition-colors flex items-center gap-1.5"
+          >
+            <Github className="w-4 h-4" /> GitHub
+          </a>
+          <a
+            href="https://linkedin.com/in/paul-adamu-67bb46324"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-amber-600 transition-colors flex items-center gap-1.5"
+          >
+            <Linkedin className="w-4 h-4" /> LinkedIn
+          </a>
+          <a
+            href="#contact"
+            onClick={() => setPage("home")}
+            className="bg-amber-400 hover:bg-amber-500 text-amber-950 px-5 py-2 rounded-full font-semibold text-sm transition-all shadow-sm shadow-amber-400/30"
+          >
+            Hire Me
+          </a>
+        </nav>
+
+        {/* Mobile hamburger */}
+        <button
+          className="md:hidden text-stone-500"
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          {menuOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+      </div>
+
+      {/* Mobile menu */}
+      {menuOpen && (
+        <div className="absolute top-full left-0 right-0 bg-[#FAFAF8]/97 backdrop-blur-md border-b border-stone-200 flex flex-col gap-1 px-6 py-4 md:hidden">
+          {[
+            { label: "Home", action: () => { setPage("home"); setMenuOpen(false); } },
+            { label: "Work", action: () => { setPage("work"); setMenuOpen(false); } },
+          ].map(({ label, action }) => (
+            <button
+              key={label}
+              onClick={action}
+              className="text-left py-2.5 text-stone-600 font-medium hover:text-amber-600 transition-colors"
+            >
+              {label}
+            </button>
+          ))}
+          <a
+            href="https://github.com/pazti"
+            target="_blank"
+            rel="noreferrer"
+            className="py-2.5 text-stone-600 font-medium hover:text-amber-600 transition-colors flex items-center gap-2"
+            onClick={() => setMenuOpen(false)}
+          >
+            <Github className="w-4 h-4" /> GitHub
+          </a>
+          <a
+            href="https://linkedin.com/in/paul-adamu-67bb46324"
+            target="_blank"
+            rel="noreferrer"
+            className="py-2.5 text-stone-600 font-medium hover:text-amber-600 transition-colors flex items-center gap-2"
+            onClick={() => setMenuOpen(false)}
+          >
+            <Linkedin className="w-4 h-4" /> LinkedIn
+          </a>
+          <a
+            href="#contact"
+            onClick={() => { setPage("home"); setMenuOpen(false); }}
+            className="mt-2 bg-amber-400 text-amber-950 px-5 py-2.5 rounded-full font-semibold text-sm text-center"
+          >
+            Hire Me
+          </a>
+        </div>
+      )}
+    </header>
+  );
+}
+
 // ─── Project Card ─────────────────────────────────────────────────────────────
 
-function ProjectCard({
-  project,
-  onSelect,
-}: {
-  project: Project;
-  onSelect: (p: Project) => void;
-}) {
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const el = cardRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width - 0.5) * 18;
-      const y = -((e.clientY - rect.top) / rect.height - 0.5) * 18;
-      el.style.transform = `perspective(900px) rotateX(${y}deg) rotateY(${x}deg) scale(1.02)`;
-      el.style.boxShadow = `
-        ${-x * 1.5}px ${y * 1.5}px 40px rgba(0,112,243,0.15),
-        0 0 30px rgba(0,255,204,0.08)
-      `;
-    },
-    []
-  );
-
-  const handleMouseLeave = useCallback(() => {
-    const el = cardRef.current;
-    if (!el) return;
-    el.style.transform = "perspective(900px) rotateX(0) rotateY(0) scale(1)";
-    el.style.boxShadow = "none";
-  }, []);
-
-  const categoryColor: Record<string, string> = {
-    web: "#0070f3",
-    cybersec: "#00ffcc",
-    design: "#7c3aed",
+function ProjectCard({ project, onSelect }: { project: Project; onSelect: (p: Project) => void }) {
+  const categoryColors: Record<string, { bg: string; text: string; border: string }> = {
+    web:      { bg: "bg-sky-50",    text: "text-sky-700",    border: "border-sky-200" },
+    cybersec: { bg: "bg-amber-50",  text: "text-amber-700",  border: "border-amber-200" },
+    design:   { bg: "bg-violet-50", text: "text-violet-700", border: "border-violet-200" },
   };
+  const cat = categoryColors[project.category] ?? categoryColors.web;
 
   return (
     <div
-      ref={cardRef}
-      className="tilt-card rounded-xl overflow-hidden cursor-pointer flex flex-col group"
-      style={{
-        background: "#161b22",
-        border: "1px solid rgba(0,255,204,0.1)",
-        transition: "transform 0.15s ease, box-shadow 0.3s ease",
-      }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
       onClick={() => onSelect(project)}
+      className="group bg-white rounded-3xl p-3 border border-stone-100 shadow-sm hover:shadow-xl hover:shadow-amber-500/10 hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col"
     >
       {/* Image */}
-      <div className="relative overflow-hidden" style={{ height: 220 }}>
+      <div className="relative rounded-2xl overflow-hidden mb-5 bg-stone-50" style={{ height: 220 }}>
         <ImageWithFallback
           src={project.imageUrl}
           alt={project.title}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-          style={{ opacity: 0.75 }}
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
-        {/* Gradient overlay */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(to top, rgba(22,27,34,1) 0%, rgba(22,27,34,0.3) 60%, transparent 100%)",
-          }}
-        />
-        {/* Hover shimmer */}
-        <div
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(135deg, rgba(0,255,204,0.06) 0%, rgba(0,112,243,0.06) 100%)",
-          }}
-        />
-        {/* Category pill */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
         <div className="absolute top-3 left-3">
-          <span
-            className="px-2.5 py-1 rounded-full text-xs font-semibold"
-            style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              background: `rgba(${project.category === "cybersec" ? "0,255,204" : project.category === "web" ? "0,112,243" : "124,58,237"},0.15)`,
-              border: `1px solid ${categoryColor[project.category]}40`,
-              color: categoryColor[project.category],
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-            }}
-          >
+          <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${cat.bg} ${cat.text} ${cat.border}`}>
             {project.tag}
           </span>
         </div>
       </div>
 
-      {/* Info */}
-      <div className="flex flex-col flex-1 p-5">
-        <h3
-          className="text-lg font-bold mb-2 group-hover:text-[#00ffcc] transition-colors duration-300"
-          style={{ fontFamily: "'Inter', sans-serif", color: "#f0f6fc" }}
-        >
+      {/* Content */}
+      <div className="px-3 pb-3 flex flex-col flex-1">
+        <h3 className="text-lg font-bold text-[#1C1917] font-['Plus_Jakarta_Sans'] mb-2 group-hover:text-amber-600 transition-colors">
           {project.title}
         </h3>
-        <p
-          className="text-sm leading-relaxed flex-1 mb-4"
-          style={{ color: "#8b949e" }}
-        >
+        <p className="text-sm text-stone-500 leading-relaxed flex-1 mb-4">
           {project.description}
         </p>
 
         {/* Language bars */}
-        <div className="space-y-1.5 mb-5">
+        <div className="space-y-1.5 mb-4">
           {project.bars.map((bar) => (
             <div key={bar.label} className="flex items-center gap-2">
               <div
-                className="rounded-full"
-                style={{
-                  width: `${bar.pct}%`,
-                  height: 3,
-                  background: bar.color,
-                  opacity: 0.8,
-                  minWidth: 24,
-                  maxWidth: "100%",
-                  flexShrink: 0,
-                }}
+                className="rounded-full h-1"
+                style={{ width: `${bar.pct}%`, background: bar.color, minWidth: 20, maxWidth: "100%", flexShrink: 0 }}
               />
-              <span
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: "0.67rem",
-                  color: "#8b949e",
-                }}
-              >
-                {bar.label} {bar.pct}%
-              </span>
+              <span className="text-xs text-stone-400">{bar.label} {bar.pct}%</span>
             </div>
           ))}
         </div>
 
-        {/* CTA */}
-        <div
-          className="flex items-center gap-2 text-sm font-semibold group-hover:gap-3 transition-all duration-300"
-          style={{
-            color: "#00ffcc",
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: "0.76rem",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-          }}
-        >
-          View Project <ArrowRight size={14} />
+        <div className="flex items-center gap-1.5 text-sm font-semibold text-[#1C1917] group-hover:text-amber-600 group-hover:gap-2.5 transition-all duration-300">
+          View Case Study <ArrowRight className="w-4 h-4" />
         </div>
       </div>
     </div>
@@ -754,464 +402,245 @@ function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void;
   ];
 
   return (
-    <main className="relative min-h-screen" style={{ zIndex: 1 }}>
+    <main className="relative">
 
-      {/* ── HERO ─────────────────────────────────────────────────── */}
-      <section className="flex flex-col md:flex-row-reverse items-center justify-between gap-12 px-6 md:px-16 lg:px-24 pt-20 pb-16 max-w-7xl mx-auto">
-
-        {/* Profile Image */}
-        <div className="flex-shrink-0 float-in">
-          <div
-            className="relative rounded-2xl overflow-hidden pulse-glow"
-            style={{
-              width: 280,
-              height: 320,
-              border: "1px solid rgba(0,255,204,0.3)",
-              background: "#161b22",
-            }}
-          >
-            <ImageWithFallback
-              src={paulPhoto}
-              alt="Paul Adamu — Full-Stack Developer & Cybersecurity Specialist"
-              className="w-full h-full object-cover object-top"
-              style={{
-                transform: "rotate(90deg) scale(1.4)",
-                transformOrigin: "center center",
-                opacity: photoLoaded ? 1 : 0,
-                transition: "opacity 0.4s ease",
-              }}
-              onLoad={() => setPhotoLoaded(true)}
-            />
-            {!photoLoaded && (
-              <div
-                className="absolute inset-0 flex items-center justify-center"
-                style={{ background: "#161b22" }}
-              >
-                <div
-                  className="rounded-full animate-spin"
-                  style={{
-                    width: 32,
-                    height: 32,
-                    border: "3px solid rgba(0,255,204,0.15)",
-                    borderTopColor: "#00ffcc",
-                  }}
-                />
-              </div>
-            )}
-            {/* Scan line effect */}
-            <div
-              className="absolute left-0 right-0 pointer-events-none"
-              style={{
-                height: 2,
-                background:
-                  "linear-gradient(to right, transparent, rgba(0,255,204,0.4), transparent)",
-                animation: "scanline 4s linear infinite",
-              }}
-            />
-            {/* Corner accents */}
-            {["top-0 left-0", "top-0 right-0", "bottom-0 left-0", "bottom-0 right-0"].map((pos, i) => (
-              <div
-                key={i}
-                className={`absolute ${pos} w-4 h-4`}
-                style={{
-                  borderTop: i < 2 ? "2px solid #00ffcc" : "none",
-                  borderBottom: i >= 2 ? "2px solid #00ffcc" : "none",
-                  borderLeft: i % 2 === 0 ? "2px solid #00ffcc" : "none",
-                  borderRight: i % 2 === 1 ? "2px solid #00ffcc" : "none",
-                }}
-              />
-            ))}
-
-            {/* Status badge overlay */}
-            <div
-              className="absolute bottom-3 left-3 right-3 flex items-center gap-2 px-3 py-2 rounded-lg"
-              style={{
-                background: "rgba(13,17,23,0.85)",
-                backdropFilter: "blur(8px)",
-                border: "1px solid rgba(0,255,204,0.2)",
-              }}
-            >
-              <div
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{
-                  background: "#00ffcc",
-                  boxShadow: "0 0 6px #00ffcc",
-                  animation: "pulseGlow 1.5s ease-in-out infinite",
-                }}
-              />
-              <span
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: "0.65rem",
-                  color: "#00ffcc",
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                }}
-              >
-                Available for Work
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Hero Text */}
-        <div className="flex-1 flex flex-col gap-6 float-in" style={{ animationDelay: "0.1s" }}>
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full w-fit"
-            style={{
-              background: "rgba(0,112,243,0.1)",
-              border: "1px solid rgba(0,112,243,0.3)",
-            }}
-          >
-            <Shield size={12} style={{ color: "#0070f3" }} />
-            <span
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: "0.7rem",
-                color: "#0070f3",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-              }}
-            >
-              Full-Stack Developer · Cybersecurity Specialist
-            </span>
+      {/* ── HERO ──────────────────────────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-6 pt-16 pb-12 md:pt-24 md:pb-20 flex flex-col md:flex-row items-center gap-12 float-in">
+        {/* Text side */}
+        <div className="flex-1 space-y-7 text-center md:text-left order-2 md:order-1">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-100 text-amber-800 text-sm font-medium">
+            <span className="w-2 h-2 rounded-full bg-amber-500" style={{ animation: "pulseAmber 1.5s ease-in-out infinite" }} />
+            Available for new opportunities
           </div>
 
-          <div>
-            <h1
-              style={{
-                fontFamily: "'Orbitron', sans-serif",
-                fontSize: "clamp(2.6rem, 6vw, 4.5rem)",
-                fontWeight: 800,
-                color: "#f0f6fc",
-                lineHeight: 1.05,
-                letterSpacing: "-0.02em",
-              }}
-            >
-              Paul{" "}
-              <span
-                style={{
-                  color: "#00ffcc",
-                  textShadow: "0 0 30px rgba(0,255,204,0.4)",
-                }}
-              >
-                Adamu
-              </span>
-            </h1>
+          <h1 className="font-['Plus_Jakarta_Sans'] text-5xl md:text-6xl lg:text-7xl font-extrabold text-[#1C1917] leading-[1.07] tracking-tight">
+            Full-Stack{" "}
+            <span className="text-amber-500">Developer</span>
+            <br />& Cybersecurity
+            <br />
+            <span className="text-stone-300 font-light">Specialist</span>
+          </h1>
 
-            <p
-              className="mt-3 text-xl"
-              style={{
-                fontFamily: "'Inter', sans-serif",
-                fontWeight: 300,
-                color: "#8b949e",
-                minHeight: "2rem",
-              }}
-            >
-              <Typewriter
-                phrases={[
-                  "Secure Architectures & Modern Interfaces",
-                  "Zero-Trust Security Frameworks",
-                  "High-Fidelity Web Experiences",
-                  "Vulnerability Research & Hardening",
-                ]}
-              />
-            </p>
-          </div>
-
-          <p
-            className="text-base leading-relaxed max-w-xl"
-            style={{ color: "#8b949e", fontFamily: "'Inter', sans-serif" }}
-          >
+          <p className="text-lg text-stone-500 max-w-2xl leading-relaxed mx-auto md:mx-0">
             I build web systems that are fast, visually sharp, and hardened against
-            modern threats — bridging the gap between elegant interfaces and
-            enterprise-grade security postures.
+            modern threats — bridging elegant interfaces with enterprise-grade security.
           </p>
 
-          {/* CTA Row */}
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
             <button
               onClick={() => setPage("work")}
-              className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-300"
-              style={{
-                background: "#00ffcc",
-                color: "#0d1117",
-                fontFamily: "'Inter', sans-serif",
-                letterSpacing: "0.02em",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 24px rgba(0,255,204,0.5)";
-                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
-                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-              }}
+              className="bg-[#1C1917] hover:bg-stone-700 text-white px-7 py-3.5 rounded-full font-semibold flex items-center gap-2 transition-all hover:-translate-y-0.5"
             >
-              View My Work <ArrowRight size={16} />
+              View My Work <ArrowRight className="w-4 h-4" />
             </button>
             <a
               href="#contact"
-              className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-300"
-              style={{
-                background: "transparent",
-                border: "1px solid rgba(240,246,252,0.2)",
-                color: "#f0f6fc",
-                fontFamily: "'Inter', sans-serif",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(0,255,204,0.4)";
-                (e.currentTarget as HTMLAnchorElement).style.color = "#00ffcc";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(240,246,252,0.2)";
-                (e.currentTarget as HTMLAnchorElement).style.color = "#f0f6fc";
-              }}
+              className="bg-white hover:bg-stone-50 text-[#1C1917] border border-stone-200 px-7 py-3.5 rounded-full font-semibold transition-all"
             >
               Get In Touch
             </a>
           </div>
 
-          {/* Countdown */}
-          <div className="pt-2">
+          <div className="pt-1">
             <CountdownTimer targetDate={settings.nextReleaseDate} />
+          </div>
+        </div>
+
+        {/* Photo side */}
+        <div className="relative shrink-0 order-1 md:order-2 w-60 h-60 md:w-80 md:h-80 lg:w-96 lg:h-96">
+          <div className="absolute inset-0 bg-amber-200 rounded-full blur-3xl opacity-30 -z-10 translate-x-4 translate-y-4" />
+          <div className="w-full h-full rounded-full border-2 border-stone-100 p-2 bg-white/60 backdrop-blur-sm overflow-hidden">
+            <div className="w-full h-full rounded-full overflow-hidden bg-stone-100 relative">
+              <ImageWithFallback
+                src={paulPhoto}
+                alt="Paul Adamu"
+                className="w-full h-full object-cover object-top"
+                style={{
+                  transform: "rotate(90deg) scale(1.4)",
+                  transformOrigin: "center center",
+                  opacity: photoLoaded ? 1 : 0,
+                  transition: "opacity 0.4s ease",
+                }}
+                onLoad={() => setPhotoLoaded(true)}
+              />
+              {!photoLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-stone-100">
+                  <div className="w-7 h-7 rounded-full border-2 border-stone-200 border-t-amber-400 animate-spin" />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Badge */}
+          <div className="absolute -bottom-2 md:bottom-6 -left-2 md:-left-10 bg-white border border-stone-100 shadow-lg shadow-stone-200/60 rounded-2xl px-4 py-3 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[11px] text-stone-400 font-medium">Security First</p>
+              <p className="text-sm font-bold text-[#1C1917]">OWASP Certified</p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── TECH MARQUEE ──────────────────────────────────────────── */}
+      {/* ── TECH MARQUEE ─────────────────────────────────────────── */}
       <TechMarquee />
 
-      {/* ── STATS ─────────────────────────────────────────────────── */}
-      <section className="px-6 md:px-16 lg:px-24 py-16 max-w-7xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* ── STATS ────────────────────────────────────────────────── */}
+      <section className="border-b border-stone-200/60 bg-white/50">
+        <div className="max-w-6xl mx-auto px-6 py-10 flex flex-wrap justify-center gap-10 md:gap-24">
           {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="flex flex-col items-center justify-center p-6 rounded-xl text-center"
-              style={{
-                background: "rgba(22,27,34,0.8)",
-                border: "1px solid rgba(0,255,204,0.08)",
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: "'Orbitron', sans-serif",
-                  fontSize: "2rem",
-                  fontWeight: 800,
-                  color: "#00ffcc",
-                  textShadow: "0 0 18px rgba(0,255,204,0.35)",
-                }}
-              >
-                {stat.value}
-              </span>
-              <span
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: "0.7rem",
-                  color: "#8b949e",
-                  marginTop: "0.4rem",
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                }}
-              >
-                {stat.label}
-              </span>
+            <div key={stat.label} className="text-center">
+              <p className="text-4xl font-extrabold text-[#1C1917] font-['Plus_Jakarta_Sans'] mb-1">{stat.value}</p>
+              <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest">{stat.label}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── ABOUT ─────────────────────────────────────────────────── */}
-      <section id="about" className="px-6 md:px-16 lg:px-24 py-16 max-w-7xl mx-auto">
-        <div
-          className="rounded-2xl p-8 md:p-12 relative overflow-hidden"
-          style={{
-            background: "rgba(22,27,34,0.7)",
-            border: "1px solid rgba(0,255,204,0.1)",
-            backdropFilter: "blur(12px)",
-          }}
-        >
-          <div
-            className="absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none"
-            style={{
-              background: "radial-gradient(circle, rgba(0,112,243,0.08) 0%, transparent 70%)",
-            }}
-          />
-          <div className="grid md:grid-cols-2 gap-10 relative">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Code2 size={16} style={{ color: "#00ffcc" }} />
-                <span
-                  style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: "0.7rem",
-                    color: "#00ffcc",
-                    letterSpacing: "0.15em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  About
-                </span>
+      {/* ── ABOUT ────────────────────────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-6 py-20 flex flex-col lg:flex-row gap-14 items-start">
+        <div className="lg:w-1/2 space-y-5">
+          <div className="flex items-center gap-2">
+            <Code2 className="w-4 h-4 text-amber-500" />
+            <span className="text-xs font-semibold text-amber-600 uppercase tracking-widest">About</span>
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold text-[#1C1917] font-['Plus_Jakarta_Sans'] leading-snug">
+            Building Secure,{" "}
+            <span className="text-amber-500">Modern Web</span> Systems
+          </h2>
+          <p className="text-stone-500 leading-relaxed">
+            I specialize in crafting web experiences that are pixel-precise on the
+            surface and armored underneath. With a background in full-stack development
+            and cybersecurity, I approach every project as both a UX challenge and a
+            threat model.
+          </p>
+        </div>
+
+        <div className="lg:w-1/2 w-full flex flex-col gap-3">
+          {[
+            { icon: <Shield className="w-4 h-4" />, title: "Security-First Mindset", desc: "Every line of code reviewed for OWASP vulnerabilities, XSS vectors, and auth edge cases." },
+            { icon: <Globe className="w-4 h-4" />, title: "Frontend Precision", desc: "React, Tailwind, and animation libraries used to build interfaces that feel alive." },
+            { icon: <Terminal className="w-4 h-4" />, title: "Full-Stack Capability", desc: "Firebase, REST APIs, and server-side rendering when the brief demands it." },
+          ].map((item) => (
+            <div key={item.title} className="flex gap-4 p-5 bg-white border border-stone-100 rounded-2xl shadow-sm hover:shadow-md hover:border-amber-200 transition-all">
+              <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+                {item.icon}
               </div>
-              <h2
-                style={{
-                  fontFamily: "'Orbitron', sans-serif",
-                  fontSize: "clamp(1.6rem, 3vw, 2.2rem)",
-                  fontWeight: 700,
-                  color: "#f0f6fc",
-                  marginBottom: "1rem",
-                  lineHeight: 1.2,
-                }}
+              <div>
+                <p className="font-semibold text-[#1C1917] mb-1 text-sm">{item.title}</p>
+                <p className="text-sm text-stone-500 leading-relaxed">{item.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── SKILLS ───────────────────────────────────────────────── */}
+      <section className="bg-white/50 border-y border-stone-200/60">
+        <div className="max-w-6xl mx-auto px-6 py-16">
+          <div className="flex items-center gap-2 mb-8">
+            <Code2 className="w-4 h-4 text-amber-500" />
+            <span className="text-xs font-semibold text-amber-600 uppercase tracking-widest">Technical Arsenal</span>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {["TypeScript", "Python", "React", "Next.js", "Node.js", "Firebase", "Tailwind CSS", "Git", "OWASP", "Cryptography", "Penetration Testing", "PHP", "Supabase", "Figma"].map((skill) => (
+              <span
+                key={skill}
+                className="px-4 py-2.5 bg-stone-50 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-800 text-stone-600 text-sm font-medium rounded-xl border border-stone-200 transition-all cursor-default"
               >
-                Building Secure,{" "}
-                <span style={{ color: "#0070f3" }}>Modern Web</span> Systems
-              </h2>
-              <p style={{ color: "#8b949e", lineHeight: 1.8 }}>
-                I specialize in crafting web experiences that are
-                pixel-precise on the surface and armored underneath. With a
-                background in full-stack development and cybersecurity, I
-                approach every project as both a UX challenge and a threat model.
-              </p>
-            </div>
-            <div className="flex flex-col gap-4">
-              {[
-                { icon: <Shield size={18} />, title: "Security-First Mindset", desc: "Every line of code reviewed for OWASP vulnerabilities, XSS vectors, and auth edge cases." },
-                { icon: <Globe size={18} />, title: "Frontend Precision", desc: "React, Tailwind, and animation libraries used to build interfaces that feel alive." },
-                { icon: <Terminal size={18} />, title: "Full-Stack Capability", desc: "Firebase, REST APIs, and server-side rendering when the brief demands it." },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="flex gap-4 p-4 rounded-xl"
-                  style={{ background: "rgba(33,38,45,0.6)", border: "1px solid rgba(0,255,204,0.06)" }}
-                >
-                  <div style={{ color: "#00ffcc", flexShrink: 0, marginTop: 2 }}>{item.icon}</div>
-                  <div>
-                    <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, color: "#f0f6fc", fontSize: "0.92rem", marginBottom: "0.25rem" }}>{item.title}</div>
-                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: "#8b949e", lineHeight: 1.6 }}>{item.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                {skill}
+              </span>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── FEATURED PROJECTS PREVIEW ──────────────────────────────── */}
-      <section className="px-6 md:px-16 lg:px-24 py-8 max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h2
-            style={{
-              fontFamily: "'Orbitron', sans-serif",
-              fontSize: "1.4rem",
-              fontWeight: 700,
-              color: "#f0f6fc",
-            }}
-          >
-            Featured Work
-          </h2>
+      {/* ── FEATURED WORK ────────────────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-6 py-20">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Layers className="w-4 h-4 text-amber-500" />
+              <span className="text-xs font-semibold text-amber-600 uppercase tracking-widest">Portfolio</span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#1C1917] font-['Plus_Jakarta_Sans']">Featured Work</h2>
+          </div>
           <button
             onClick={() => setPage("work")}
-            className="flex items-center gap-1 text-sm transition-colors duration-300"
-            style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              color: "#8b949e",
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              fontSize: "0.72rem",
-            }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#00ffcc")}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#8b949e")}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-600 hover:text-amber-700 transition-colors"
           >
-            View All <ChevronRight size={14} />
+            View All <ChevronRight className="w-4 h-4" />
           </button>
         </div>
+
         {preview.length > 0 ? (
           <div className="grid md:grid-cols-2 gap-6">
             {preview.map((p) => (
-              <ProjectCard key={p.id} project={p} onSelect={(proj) => { setSelectedProject(proj); setPage("case-study"); }} />
+              <ProjectCard
+                key={p.id}
+                project={p}
+                onSelect={(proj) => { setSelectedProject(proj); setPage("case-study"); }}
+              />
             ))}
           </div>
         ) : (
-          <div className="text-center py-16 rounded-2xl" style={{ background: "rgba(22,27,34,0.5)", border: "1px dashed rgba(0,255,204,0.15)" }}>
-            <p style={{ fontFamily: "'JetBrains Mono', monospace", color: "#8b949e", fontSize: "0.85rem" }}>
-              {projects === null ? "// Loading projects…" : "// No projects published yet — check back soon"}
+          <div className="text-center py-16 rounded-2xl border border-dashed border-stone-200 bg-stone-50/50">
+            <p className="text-stone-400 text-sm font-medium">
+              {projects === null ? "Loading projects…" : "No projects published yet — check back soon"}
             </p>
           </div>
         )}
       </section>
 
-      {/* ── CONTACT ───────────────────────────────────────────────── */}
-      <section id="contact" className="px-6 md:px-16 lg:px-24 py-16 max-w-7xl mx-auto">
-        <div className="max-w-xl mx-auto">
-          <div className="flex items-center gap-2 mb-3">
-            <Lock size={14} style={{ color: "#00ffcc" }} />
-            <span
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: "0.68rem",
-                color: "#00ffcc",
-                letterSpacing: "0.15em",
-                textTransform: "uppercase",
-              }}
+      {/* ── CONTACT ──────────────────────────────────────────────── */}
+      <section id="contact" className="max-w-6xl mx-auto px-6 py-16 md:py-24">
+        {/* CTA banner */}
+        <div className="bg-amber-400 rounded-[2.5rem] p-10 md:p-16 text-center relative overflow-hidden shadow-xl shadow-amber-500/20 mb-14">
+          <div className="absolute top-0 right-0 w-72 h-72 bg-amber-300 rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/4 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-72 h-72 bg-amber-500 rounded-full blur-3xl opacity-30 translate-y-1/4 -translate-x-1/4 pointer-events-none" />
+          <div className="relative z-10">
+            <h2 className="text-3xl md:text-5xl font-extrabold text-amber-950 font-['Plus_Jakarta_Sans'] mb-4 tracking-tight">
+              Let's build something secure together.
+            </h2>
+            <p className="text-amber-900/80 text-lg mb-8 max-w-xl mx-auto">
+              Currently open for new opportunities. Whether you have a question or just want to say hi, my inbox is open.
+            </p>
+            <a
+              href="mailto:pauladamu600@gmail.com"
+              className="inline-flex items-center gap-2 bg-[#1C1917] text-white px-7 py-3.5 rounded-full font-semibold hover:bg-stone-700 transition-all hover:scale-105"
             >
-              Encrypted Channel
-            </span>
+              <Mail className="w-5 h-5" /> Say Hello
+            </a>
           </div>
-          <h2
-            style={{
-              fontFamily: "'Orbitron', sans-serif",
-              fontSize: "clamp(1.5rem, 3vw, 2rem)",
-              fontWeight: 700,
-              color: "#f0f6fc",
-              marginBottom: "0.5rem",
-            }}
-          >
-            Send a Message
-          </h2>
-          <p style={{ color: "#8b949e", fontSize: "0.9rem", marginBottom: "2rem" }}>
-            Open to freelance projects, security audits, and collaborations.
-          </p>
+        </div>
+
+        {/* Contact form */}
+        <div className="max-w-xl mx-auto">
+          <div className="flex items-center gap-2 mb-2">
+            <Lock className="w-4 h-4 text-amber-500" />
+            <span className="text-xs font-semibold text-amber-600 uppercase tracking-widest">Send a Message</span>
+          </div>
+          <h3 className="text-2xl font-bold text-[#1C1917] font-['Plus_Jakarta_Sans'] mb-1">Direct Inbox</h3>
+          <p className="text-stone-500 text-sm mb-8">Open to freelance projects, security audits, and collaborations.</p>
 
           {submitted ? (
-            <div
-              className="flex flex-col items-center gap-4 py-12 rounded-2xl text-center"
-              style={{
-                background: "rgba(0,255,204,0.05)",
-                border: "1px solid rgba(0,255,204,0.2)",
-              }}
-            >
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center"
-                style={{ background: "rgba(0,255,204,0.15)" }}
-              >
-                <Shield size={24} style={{ color: "#00ffcc" }} />
+            <div className="flex flex-col items-center gap-4 py-12 rounded-2xl text-center bg-amber-50 border border-amber-200">
+              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                <Shield className="w-6 h-6" />
               </div>
-              <p style={{ fontFamily: "'Orbitron', sans-serif", color: "#00ffcc", fontSize: "1rem", fontWeight: 600 }}>
-                Message Transmitted
-              </p>
-              <p style={{ color: "#8b949e", fontSize: "0.85rem" }}>
-                I'll get back to you within 48 hours.
-              </p>
+              <p className="font-bold text-[#1C1917] font-['Plus_Jakarta_Sans']">Message Sent!</p>
+              <p className="text-stone-500 text-sm">I'll get back to you within 48 hours.</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               {[
-                { key: "name", label: "Full Name", type: "text", placeholder: "Your name" },
-                { key: "email", label: "Email Address", type: "email", placeholder: "you@domain.com" },
+                { key: "name",    label: "Full Name",      type: "text",  placeholder: "Your name" },
+                { key: "email",   label: "Email Address",  type: "email", placeholder: "you@domain.com" },
               ].map(({ key, label, type, placeholder }) => (
                 <div key={key} className="flex flex-col gap-1.5">
-                  <label
-                    style={{
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: "0.68rem",
-                      color: "#8b949e",
-                      letterSpacing: "0.1em",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {label}
-                  </label>
+                  <label className="text-xs font-semibold text-stone-500 uppercase tracking-wider">{label}</label>
                   <input
                     type={type}
                     name={key}
@@ -1219,37 +648,12 @@ function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void;
                     required
                     value={formData[key as keyof typeof formData]}
                     onChange={(e) => setFormData((f) => ({ ...f, [key]: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-lg outline-none transition-all duration-300"
-                    style={{
-                      background: "#21262d",
-                      border: "1px solid rgba(0,255,204,0.12)",
-                      color: "#f0f6fc",
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: "0.9rem",
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(0,255,204,0.4)";
-                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(0,255,204,0.06)";
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(0,255,204,0.12)";
-                      e.currentTarget.style.boxShadow = "none";
-                    }}
+                    className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-white text-[#1C1917] text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all placeholder:text-stone-300"
                   />
                 </div>
               ))}
               <div className="flex flex-col gap-1.5">
-                <label
-                  style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: "0.68rem",
-                    color: "#8b949e",
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Message
-                </label>
+                <label className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Message</label>
                 <textarea
                   name="message"
                   rows={5}
@@ -1257,103 +661,52 @@ function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void;
                   required
                   value={formData.message}
                   onChange={(e) => setFormData((f) => ({ ...f, message: e.target.value }))}
-                  className="w-full px-4 py-3 rounded-lg outline-none transition-all duration-300 resize-none"
-                  style={{
-                    background: "#21262d",
-                    border: "1px solid rgba(0,255,204,0.12)",
-                    color: "#f0f6fc",
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "0.9rem",
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "rgba(0,255,204,0.4)";
-                    e.currentTarget.style.boxShadow = "0 0 0 3px rgba(0,255,204,0.06)";
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "rgba(0,255,204,0.12)";
-                    e.currentTarget.style.boxShadow = "none";
-                  }}
+                  className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-white text-[#1C1917] text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all resize-none placeholder:text-stone-300"
                 />
               </div>
               {sendError && (
-                <p
-                  className="text-sm rounded-lg px-4 py-3"
-                  style={{ background: "rgba(248,81,73,0.1)", border: "1px solid rgba(248,81,73,0.3)", color: "#f85149" }}
-                >
-                  {sendError}
-                </p>
+                <p className="text-sm rounded-xl px-4 py-3 bg-red-50 border border-red-200 text-red-600">{sendError}</p>
               )}
               <button
                 type="submit"
                 disabled={sending}
-                className="w-full py-3.5 rounded-lg font-semibold text-sm transition-all duration-300"
-                style={{
-                  background: "#00ffcc",
-                  color: "#0d1117",
-                  fontFamily: "'Inter', sans-serif",
-                  letterSpacing: "0.04em",
-                  opacity: sending ? 0.6 : 1,
-                  cursor: sending ? "not-allowed" : "pointer",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 24px rgba(0,255,204,0.4)";
-                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
-                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-                }}
+                className="w-full py-3.5 rounded-full font-semibold text-sm bg-amber-400 hover:bg-amber-500 text-amber-950 transition-all hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
               >
-                {sending ? "Transmitting…" : "Transmit Message"}
+                {sending ? "Sending…" : "Send Message"}
               </button>
             </form>
           )}
         </div>
       </section>
 
-      {/* ── FOOTER ────────────────────────────────────────────────── */}
-      <footer
-        className="px-6 md:px-16 py-10 text-center"
-        style={{ borderTop: "1px solid rgba(0,255,204,0.08)" }}
-      >
-        <div className="flex justify-center gap-6 mb-6">
-          {[
-            { href: "https://linkedin.com/in/paul-adamu-67bb46324", icon: <Linkedin size={20} />, label: "LinkedIn" },
-            { href: "https://www.instagram.com/pa_zti", icon: <Instagram size={20} />, label: "Instagram" },
-            { href: "https://www.youtube.com/@officialpauladamu", icon: <Youtube size={20} />, label: "YouTube" },
-          ].map(({ href, icon, label }) => (
-            <a
-              key={label}
-              href={href}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={label}
-              className="transition-all duration-300"
-              style={{ color: "#8b949e" }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.color = "#00ffcc";
-                (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-3px)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.color = "#8b949e";
-                (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
-              }}
-            >
-              {icon}
-            </a>
-          ))}
+      {/* ── FOOTER ───────────────────────────────────────────────── */}
+      <footer className="border-t border-stone-200/60 bg-white">
+        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 font-bold text-lg text-[#1C1917] font-['Plus_Jakarta_Sans']">
+            <div className="w-6 h-6 rounded bg-amber-400 flex items-center justify-center text-amber-950 text-xs font-bold">P</div>
+            Paul Adamu
+          </div>
+          <p className="text-sm text-stone-400 font-medium">© {new Date().getFullYear()} Paul Adamu. All rights reserved.</p>
+          <div className="flex items-center gap-2 text-stone-400">
+            {[
+              { href: "https://github.com/pazti", icon: <Github className="w-5 h-5" />, label: "GitHub" },
+              { href: "https://linkedin.com/in/paul-adamu-67bb46324", icon: <Linkedin className="w-5 h-5" />, label: "LinkedIn" },
+              { href: "https://www.instagram.com/pa_zti", icon: <Instagram className="w-5 h-5" />, label: "Instagram" },
+              { href: "https://www.youtube.com/@officialpauladamu", icon: <Youtube className="w-5 h-5" />, label: "YouTube" },
+            ].map(({ href, icon, label }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={label}
+                className="p-2 hover:text-amber-500 transition-colors hover:-translate-y-0.5 transform"
+              >
+                {icon}
+              </a>
+            ))}
+          </div>
         </div>
-        <p
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: "0.68rem",
-            color: "#30363d",
-            letterSpacing: "0.15em",
-            textTransform: "uppercase",
-          }}
-        >
-          © 2026 Paul Adamu All Rights Reserved
-        </p>
       </footer>
     </main>
   );
@@ -1363,21 +716,15 @@ function HomePage({ setPage, setSelectedProject }: { setPage: (p: Page) => void;
 
 type FilterKey = "all" | "web" | "cybersec" | "design";
 
-function WorkPage({
-  setPage,
-  setSelectedProject,
-}: {
-  setPage: (p: Page) => void;
-  setSelectedProject: (p: Project) => void;
-}) {
+function WorkPage({ setPage, setSelectedProject }: { setPage: (p: Page) => void; setSelectedProject: (p: Project) => void }) {
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
   const projects = useProjects();
 
   const filters: { key: FilterKey; label: string }[] = [
-    { key: "all", label: "All" },
-    { key: "web", label: "Web" },
+    { key: "all",      label: "All" },
+    { key: "web",      label: "Web" },
     { key: "cybersec", label: "Cybersec" },
-    { key: "design", label: "Design" },
+    { key: "design",   label: "Design" },
   ];
 
   const filtered =
@@ -1386,122 +733,57 @@ function WorkPage({
       : (projects ?? []).filter((p) => p.category === activeFilter);
 
   return (
-    <main className="min-h-screen px-6 md:px-16 lg:px-24 py-16 max-w-7xl mx-auto relative" style={{ zIndex: 1 }}>
-      {/* Page Header */}
-      <div className="mb-12 float-in">
-        <div className="flex items-center gap-2 mb-4">
-          <Layers size={14} style={{ color: "#0070f3" }} />
-          <span
-            style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "0.68rem",
-              color: "#0070f3",
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
-            }}
-          >
-            Portfolio
-          </span>
+    <main className="max-w-6xl mx-auto px-6 py-16 float-in">
+      {/* Header */}
+      <div className="mb-12">
+        <div className="flex items-center gap-2 mb-3">
+          <Layers className="w-4 h-4 text-amber-500" />
+          <span className="text-xs font-semibold text-amber-600 uppercase tracking-widest">Portfolio</span>
         </div>
-        <h1
-          style={{
-            fontFamily: "'Orbitron', sans-serif",
-            fontSize: "clamp(2.5rem, 7vw, 4.5rem)",
-            fontWeight: 800,
-            color: "#f0f6fc",
-            lineHeight: 0.95,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Selected{" "}
-          <span
-            style={{
-              color: "#00ffcc",
-              textShadow: "0 0 30px rgba(0,255,204,0.3)",
-            }}
-          >
-            Projects
-          </span>
+        <h1 className="text-5xl md:text-6xl font-extrabold text-[#1C1917] font-['Plus_Jakarta_Sans'] leading-tight tracking-tight mb-4">
+          Selected <span className="text-amber-500">Projects</span>
         </h1>
-        <p
-          className="mt-4 max-w-lg"
-          style={{
-            fontFamily: "'Inter', sans-serif",
-            color: "#8b949e",
-            fontSize: "1rem",
-            lineHeight: 1.7,
-          }}
-        >
-          A collection of secure architectures, modern interfaces, and
-          full-stack systems built with precision.
+        <p className="text-stone-500 max-w-lg leading-relaxed">
+          A collection of secure architectures, modern interfaces, and full-stack systems built with precision.
         </p>
       </div>
 
-      {/* Filter Pills */}
-      <div className="flex gap-2 flex-wrap mb-10 relative">
+      {/* Filter pills */}
+      <div className="flex gap-2 flex-wrap mb-10">
         {filters.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setActiveFilter(key)}
-            className="px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300"
-            style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "0.75rem",
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              background:
-                activeFilter === key
-                  ? "#00ffcc"
-                  : "rgba(33,38,45,0.8)",
-              color:
-                activeFilter === key ? "#0d1117" : "#8b949e",
-              border:
-                activeFilter === key
-                  ? "1px solid #00ffcc"
-                  : "1px solid rgba(0,255,204,0.1)",
-              boxShadow:
-                activeFilter === key
-                  ? "0 0 16px rgba(0,255,204,0.3)"
-                  : "none",
-            }}
+            className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
+              activeFilter === key
+                ? "bg-amber-400 text-amber-950 shadow-sm shadow-amber-400/40"
+                : "bg-white border border-stone-200 text-stone-500 hover:border-amber-300 hover:text-amber-700"
+            }`}
           >
             {label}
           </button>
         ))}
       </div>
 
-      {/* Project Grid */}
-      <div
-        className="grid gap-6"
-        style={{
-          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-        }}
-      >
+      {/* Grid */}
+      <div className="grid gap-6" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))" }}>
         {filtered.map((project) => (
           <div
             key={project.id}
-            style={{
-              gridColumn: project.featured && activeFilter === "all" ? "span 2" : "span 1",
-            }}
-            className="transition-all duration-500"
+            style={{ gridColumn: project.featured && activeFilter === "all" ? "span 2" : "span 1" }}
           >
             <ProjectCard
               project={project}
-              onSelect={(p) => {
-                setSelectedProject(p);
-                setPage("case-study");
-              }}
+              onSelect={(p) => { setSelectedProject(p); setPage("case-study"); }}
             />
           </div>
         ))}
       </div>
 
       {filtered.length === 0 && (
-        <div className="text-center py-24">
-          <p style={{ fontFamily: "'JetBrains Mono', monospace", color: "#8b949e", fontSize: "0.85rem" }}>
-            {projects === null
-              ? "// Loading projects…"
-              : "// No projects published in this category yet"}
+        <div className="text-center py-24 rounded-2xl border border-dashed border-stone-200">
+          <p className="text-stone-400 text-sm">
+            {projects === null ? "Loading projects…" : "No projects in this category yet"}
           </p>
         </div>
       )}
@@ -1511,176 +793,72 @@ function WorkPage({
 
 // ─── CASE STUDY PAGE ──────────────────────────────────────────────────────────
 
-function CaseStudyPage({
-  project,
-  setPage,
-}: {
-  project: Project;
-  setPage: (p: Page) => void;
-}) {
+function CaseStudyPage({ project, setPage }: { project: Project; setPage: (p: Page) => void }) {
   const [activeScreen, setActiveScreen] = useState(0);
 
-  const categoryColor: Record<string, string> = {
-    web: "#0070f3",
-    cybersec: "#00ffcc",
-    design: "#7c3aed",
+  const categoryStyles: Record<string, { bg: string; text: string; border: string }> = {
+    web:      { bg: "bg-sky-50",    text: "text-sky-700",    border: "border-sky-200" },
+    cybersec: { bg: "bg-amber-50",  text: "text-amber-700",  border: "border-amber-200" },
+    design:   { bg: "bg-violet-50", text: "text-violet-700", border: "border-violet-200" },
   };
+  const cat = categoryStyles[project.category] ?? categoryStyles.web;
 
   return (
-    <main className="min-h-screen relative" style={{ zIndex: 1 }}>
-      {/* Back button */}
-      <div className="px-6 md:px-16 lg:px-24 pt-10 max-w-7xl mx-auto">
-        <button
-          onClick={() => setPage("work")}
-          className="flex items-center gap-2 mb-8 transition-colors duration-300 group"
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: "0.72rem",
-            color: "#8b949e",
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-          }}
-          onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#00ffcc")}
-          onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#8b949e")}
-        >
-          <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform duration-300" />
-          Back to Work
-        </button>
-      </div>
+    <main className="max-w-6xl mx-auto px-6 py-10 float-in">
+      {/* Back */}
+      <button
+        onClick={() => setPage("work")}
+        className="flex items-center gap-2 mb-10 text-sm font-semibold text-stone-400 hover:text-amber-600 transition-colors group"
+      >
+        <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+        Back to Work
+      </button>
 
-      {/* Split-pane layout */}
-      <div className="px-6 md:px-16 lg:px-24 pb-20 max-w-7xl mx-auto grid lg:grid-cols-[1fr_1.2fr] gap-12 items-start">
-
-        {/* ── LEFT: Technical Details ─────────────────────────────── */}
-        <div className="flex flex-col gap-8 float-in">
-
-          {/* Category + Tag */}
+      <div className="grid lg:grid-cols-[1fr_1.2fr] gap-12 items-start">
+        {/* ── LEFT: Details ──────────────────────────────────────── */}
+        <div className="flex flex-col gap-7">
           <div className="flex items-center gap-3">
-            <span
-              className="px-3 py-1.5 rounded-full text-xs font-semibold"
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                background: `rgba(${project.category === "cybersec" ? "0,255,204" : project.category === "web" ? "0,112,243" : "124,58,237"},0.12)`,
-                border: `1px solid ${categoryColor[project.category]}40`,
-                color: categoryColor[project.category],
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-              }}
-            >
+            <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${cat.bg} ${cat.text} ${cat.border}`}>
               {project.tag}
             </span>
-            <span
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: "0.65rem",
-                color: "#8b949e",
-                letterSpacing: "0.1em",
-              }}
-            >
-              {project.year}
-            </span>
+            <span className="text-xs text-stone-400">{project.year}</span>
           </div>
 
-          {/* Title */}
-          <h1
-            style={{
-              fontFamily: "'Orbitron', sans-serif",
-              fontSize: "clamp(1.8rem, 4vw, 2.8rem)",
-              fontWeight: 800,
-              color: "#f0f6fc",
-              lineHeight: 1.1,
-              letterSpacing: "-0.02em",
-            }}
-          >
+          <h1 className="text-4xl md:text-5xl font-extrabold text-[#1C1917] font-['Plus_Jakarta_Sans'] leading-tight">
             {project.title}
           </h1>
 
-          {/* Long description */}
-          <p style={{ color: "#8b949e", lineHeight: 1.85, fontFamily: "'Inter', sans-serif" }}>
-            {project.longDescription}
-          </p>
+          <p className="text-stone-500 leading-relaxed">{project.longDescription}</p>
 
           {/* Meta grid */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {[
-              { label: "Role", value: project.role },
-              { label: "Year", value: project.year },
+              { label: "Role",   value: project.role },
+              { label: "Year",   value: project.year },
               { label: "Status", value: "Live" },
-              { label: "Type", value: project.tag },
+              { label: "Type",   value: project.tag },
             ].map(({ label, value }) => (
-              <div
-                key={label}
-                className="p-4 rounded-xl"
-                style={{
-                  background: "rgba(22,27,34,0.8)",
-                  border: "1px solid rgba(0,255,204,0.08)",
-                }}
-              >
-                <div
-                  style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: "0.6rem",
-                    color: "#8b949e",
-                    letterSpacing: "0.12em",
-                    textTransform: "uppercase",
-                    marginBottom: "0.4rem",
-                  }}
-                >
-                  {label}
-                </div>
-                <div
-                  style={{
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "0.9rem",
-                    fontWeight: 600,
-                    color: "#f0f6fc",
-                  }}
-                >
-                  {value}
-                </div>
+              <div key={label} className="p-4 rounded-2xl bg-white border border-stone-100 shadow-sm">
+                <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">{label}</p>
+                <p className="text-sm font-semibold text-[#1C1917]">{value}</p>
               </div>
             ))}
           </div>
 
           {/* Language breakdown */}
-          <div
-            className="p-6 rounded-xl"
-            style={{
-              background: "rgba(22,27,34,0.8)",
-              border: "1px solid rgba(0,255,204,0.08)",
-            }}
-          >
-            <div
-              className="mb-4"
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: "0.65rem",
-                color: "#8b949e",
-                letterSpacing: "0.15em",
-                textTransform: "uppercase",
-              }}
-            >
-              Language Breakdown
-            </div>
+          <div className="bg-white border border-stone-100 shadow-sm rounded-2xl p-6">
+            <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-4">Language Breakdown</p>
             <div className="space-y-3">
               {project.bars.map((bar) => (
                 <div key={bar.label}>
                   <div className="flex justify-between mb-1">
-                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", color: "#f0f6fc" }}>
-                      {bar.label}
-                    </span>
-                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.72rem", color: bar.color }}>
-                      {bar.pct}%
-                    </span>
+                    <span className="text-sm font-medium text-[#1C1917]">{bar.label}</span>
+                    <span className="text-sm font-semibold" style={{ color: bar.color }}>{bar.pct}%</span>
                   </div>
-                  <div className="w-full rounded-full h-1.5" style={{ background: "rgba(33,38,45,1)" }}>
+                  <div className="w-full rounded-full h-1.5 bg-stone-100">
                     <div
-                      className="h-1.5 rounded-full transition-all duration-1000"
-                      style={{
-                        width: `${bar.pct}%`,
-                        background: `linear-gradient(to right, ${bar.color}cc, ${bar.color})`,
-                        boxShadow: `0 0 8px ${bar.color}60`,
-                      }}
+                      className="h-1.5 rounded-full transition-all duration-700"
+                      style={{ width: `${bar.pct}%`, background: bar.color }}
                     />
                   </div>
                 </div>
@@ -1688,32 +866,14 @@ function CaseStudyPage({
             </div>
           </div>
 
-          {/* Technologies Used */}
+          {/* Tech used */}
           <div>
-            <div
-              className="mb-3"
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: "0.65rem",
-                color: "#8b949e",
-                letterSpacing: "0.15em",
-                textTransform: "uppercase",
-              }}
-            >
-              Technologies Used
-            </div>
+            <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">Technologies Used</p>
             <div className="flex flex-wrap gap-2">
               {project.tech.map((t) => (
                 <span
                   key={t}
-                  className="px-3 py-1.5 rounded-lg text-xs"
-                  style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    background: "rgba(33,38,45,0.8)",
-                    border: "1px solid rgba(0,255,204,0.12)",
-                    color: "#f0f6fc",
-                    letterSpacing: "0.04em",
-                  }}
+                  className="px-3 py-1.5 rounded-xl text-xs font-medium bg-stone-50 border border-stone-200 text-stone-600"
                 >
                   {t}
                 </span>
@@ -1721,155 +881,76 @@ function CaseStudyPage({
             </div>
           </div>
 
-          {/* Live Link */}
+          {/* Live link */}
           <a
             href={project.liveUrl}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center justify-center gap-3 py-3.5 rounded-xl font-semibold text-sm transition-all duration-300"
-            style={{
-              background: "#00ffcc",
-              color: "#0d1117",
-              fontFamily: "'Inter', sans-serif",
-              letterSpacing: "0.03em",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 0 28px rgba(0,255,204,0.45)";
-              (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.boxShadow = "none";
-              (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
-            }}
+            className="flex items-center justify-center gap-2 py-3.5 rounded-full bg-amber-400 hover:bg-amber-500 text-amber-950 font-semibold text-sm transition-all hover:-translate-y-0.5 shadow-sm shadow-amber-400/40"
           >
-            <ExternalLink size={16} /> View Live Project
+            <ExternalLink className="w-4 h-4" /> View Live Project
           </a>
         </div>
 
-        {/* ── RIGHT: Glass Dashboard Frame ────────────────────────── */}
-        <div className="flex flex-col gap-5 float-in" style={{ animationDelay: "0.15s" }}>
-          {/* Main screenshot frame */}
-          <div
-            className="relative rounded-2xl overflow-hidden"
-            style={{
-              background: "rgba(22,27,34,0.7)",
-              border: "1px solid rgba(0,255,204,0.15)",
-              backdropFilter: "blur(16px)",
-              boxShadow: "0 0 60px rgba(0,112,243,0.08), 0 0 0 1px rgba(0,255,204,0.05)",
-            }}
-          >
-            {/* Browser chrome mock */}
-            <div
-              className="flex items-center gap-2 px-4 py-3"
-              style={{ borderBottom: "1px solid rgba(0,255,204,0.1)", background: "rgba(13,17,23,0.5)" }}
-            >
+        {/* ── RIGHT: Screenshots ─────────────────────────────────── */}
+        <div className="flex flex-col gap-4">
+          {/* Main screenshot */}
+          <div className="rounded-2xl overflow-hidden border border-stone-200 shadow-sm bg-white">
+            {/* Browser chrome */}
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-stone-100 bg-stone-50">
               <div className="flex gap-1.5">
                 {["#f85149", "#e3b341", "#3fb950"].map((c) => (
                   <div key={c} className="w-2.5 h-2.5 rounded-full" style={{ background: c, opacity: 0.8 }} />
                 ))}
               </div>
-              <div
-                className="flex-1 mx-4 px-3 py-1 rounded text-center"
-                style={{
-                  background: "rgba(33,38,45,0.6)",
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: "0.62rem",
-                  color: "#8b949e",
-                  letterSpacing: "0.04em",
-                }}
-              >
+              <div className="flex-1 mx-3 px-3 py-1 rounded bg-stone-100 text-xs text-stone-400 text-center truncate">
                 {project.liveUrl.replace("https://", "")}
               </div>
-              <Eye size={12} style={{ color: "#8b949e" }} />
+              <Eye className="w-3 h-3 text-stone-400" />
             </div>
-
-            {/* Screenshot */}
-            <div className="relative" style={{ height: 360 }}>
+            <div style={{ height: 360 }}>
               <ImageWithFallback
                 src={project.screens[activeScreen]}
                 alt={`${project.title} — screenshot ${activeScreen + 1}`}
                 className="w-full h-full object-cover"
               />
-              {/* Scanline overlay */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: "repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 2px)",
-                }}
-              />
-              {/* Inner glow */}
-              <div
-                className="absolute inset-0 pointer-events-none rounded-b-2xl"
-                style={{
-                  boxShadow: "inset 0 0 40px rgba(0,112,243,0.06)",
-                }}
-              />
             </div>
           </div>
 
-          {/* Thumbnail strip */}
-          <div className="flex gap-3">
-            {project.screens.map((src, i) => (
-              <button
-                key={i}
-                onClick={() => setActiveScreen(i)}
-                className="relative rounded-xl overflow-hidden flex-1 transition-all duration-300"
-                style={{
-                  height: 80,
-                  border: `1px solid ${i === activeScreen ? "rgba(0,255,204,0.5)" : "rgba(0,255,204,0.08)"}`,
-                  boxShadow: i === activeScreen ? "0 0 14px rgba(0,255,204,0.2)" : "none",
-                }}
-              >
-                <ImageWithFallback
-                  src={src}
-                  alt={`Screen ${i + 1}`}
-                  className="w-full h-full object-cover"
-                  style={{ opacity: i === activeScreen ? 1 : 0.45 }}
-                />
-              </button>
-            ))}
-          </div>
+          {/* Thumbnails */}
+          {project.screens.length > 1 && (
+            <div className="flex gap-3">
+              {project.screens.map((src, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveScreen(i)}
+                  className={`relative rounded-xl overflow-hidden flex-1 transition-all duration-200 ${
+                    i === activeScreen ? "ring-2 ring-amber-400 shadow-md" : "opacity-50 hover:opacity-70"
+                  }`}
+                  style={{ height: 72 }}
+                >
+                  <ImageWithFallback
+                    src={src}
+                    alt={`Screen ${i + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
 
-          {/* Cyber stats row */}
+          {/* Score cards */}
           <div className="grid grid-cols-3 gap-3">
             {[
               { label: "Performance", value: "98", unit: "/100" },
               { label: "Accessibility", value: "94", unit: "/100" },
               { label: "Security", value: "A+", unit: "" },
             ].map(({ label, value, unit }) => (
-              <div
-                key={label}
-                className="p-4 rounded-xl text-center"
-                style={{
-                  background: "rgba(22,27,34,0.8)",
-                  border: "1px solid rgba(0,255,204,0.08)",
-                }}
-              >
-                <div
-                  style={{
-                    fontFamily: "'Orbitron', sans-serif",
-                    fontSize: "1.4rem",
-                    fontWeight: 700,
-                    color: "#00ffcc",
-                    textShadow: "0 0 10px rgba(0,255,204,0.4)",
-                    lineHeight: 1,
-                  }}
-                >
-                  {value}
-                  <span style={{ fontSize: "0.7rem", opacity: 0.6 }}>{unit}</span>
-                </div>
-                <div
-                  style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: "0.6rem",
-                    color: "#8b949e",
-                    marginTop: "0.4rem",
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  {label}
-                </div>
+              <div key={label} className="p-4 rounded-2xl bg-white border border-stone-100 shadow-sm text-center">
+                <p className="text-2xl font-extrabold text-amber-500 font-['Plus_Jakarta_Sans'] leading-none mb-1">
+                  {value}<span className="text-xs text-stone-400 font-normal">{unit}</span>
+                </p>
+                <p className="text-xs text-stone-400 font-medium uppercase tracking-wider">{label}</p>
               </div>
             ))}
           </div>
@@ -1885,41 +966,27 @@ export default function App() {
   const [page, setPage] = useState<Page>("home");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  // Scroll to top on page change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [page]);
 
   return (
     <div
-      className="min-h-screen relative"
+      className="min-h-screen"
       style={{
-        background: "#0d1117",
-        color: "#f0f6fc",
+        background: "#FAFAF8",
+        color: "#57534E",
         fontFamily: "'Inter', sans-serif",
       }}
     >
-      {/* Inject keyframe styles once */}
       <style>{GLOBAL_STYLES}</style>
-
-      {/* Persistent star field background */}
-      <StarField />
-
-      {/* Header */}
       <Header page={page} setPage={setPage} />
 
-      {/* Page Router */}
       {page === "home" && (
-        <HomePage
-          setPage={setPage}
-          setSelectedProject={setSelectedProject}
-        />
+        <HomePage setPage={setPage} setSelectedProject={setSelectedProject} />
       )}
       {page === "work" && (
-        <WorkPage
-          setPage={setPage}
-          setSelectedProject={setSelectedProject}
-        />
+        <WorkPage setPage={setPage} setSelectedProject={setSelectedProject} />
       )}
       {page === "case-study" && selectedProject && (
         <CaseStudyPage project={selectedProject} setPage={setPage} />
